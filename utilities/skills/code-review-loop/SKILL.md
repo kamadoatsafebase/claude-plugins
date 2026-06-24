@@ -5,83 +5,56 @@ description: Run /code-review repeatedly, verify findings, fix valid ones, and r
 
 # /code-review-loop
 
-Iteratively run code-review → verify → fix → amend commit, up to 5 turns, stopping early when no valid findings remain.
+Run code-review → triage → fix → amend, up to 5 turns, stopping early when no valid findings remain.
 
-Usage: `/code-review-loop [args]`
+Usage: `/code-review-loop [args]` — args are forwarded to each `/code-review` call.
 
-Any args are forwarded to each `/code-review` invocation (e.g. a branch name or file path).
+> **Prerequisite:** The built-in `code-review` skill (ships with Claude Code).
 
 ---
 
-> **Prerequisite:** This skill requires the built-in `code-review` skill, which ships with Claude Code and is available by default.
-
-Maintain a **turn counter** starting at 0. Repeat the following loop until the counter reaches 5 or a stop condition is met.
+Maintain a turn counter starting at 0. Repeat until it reaches 5 or a stop condition is met.
 
 ## Each turn
 
-### Step 1 — Run code-review
-
-Increment the turn counter. Invoke the `code-review` skill (via the Skill tool) forwarding any args.
-
-Parse the JSON findings array from its output (the last JSON code block). If the array is `[]`, print:
+**Step 1 — Run code-review.** Increment the counter. Invoke `code-review` via the Skill tool, forwarding any args. Parse the JSON findings array from the last JSON code block. If empty:
 
 ```
 code-review-loop: clean. Done after <N> turn(s).
 ```
 
-and stop.
+Stop.
 
-### Step 2 — Triage findings
+**Step 2 — Triage.** Spawn a sub-agent with: the findings array, the unified diff (`git diff @{upstream}...HEAD`; fall back to `git diff HEAD~1`), and file content around each finding's line. Classify each finding as:
 
-Spawn a sub-agent. Give it:
-- The full findings array from Step 1.
-- The current unified diff (run `git diff @{upstream}...HEAD`; fall back to `git diff HEAD~1` if that produces no output).
-- For each finding, the actual file content around the indicated line.
+- **fix** — genuine correctness bug with a concrete failure scenario that should be addressed now
+- **skip** — style, cleanup, efficiency, altitude, or already handled in the diff
 
-Instruct it to classify each finding as one of:
-- **fix** — a genuine correctness bug with a concrete failure scenario that should be addressed now.
-- **skip** — style, cleanup, efficiency, altitude, or a finding that is provably already handled in the diff.
-
-Return a JSON array of only the **fix** findings, preserving the original `file`, `line`, `summary`, and `failure_scenario` fields.
-
-If the fix array is empty, print:
+If the fix list is empty:
 
 ```
 code-review-loop: <N> finding(s) reviewed — all style/altitude/already-fixed. Done after <turn> turn(s).
 ```
 
-and stop.
+Stop.
 
-### Step 3 — Fix findings
+**Step 3 — Fix.** Spawn a sub-agent with the fix findings. For each, read the file at the indicated line and apply the minimal edit that eliminates the failure — no cleanup, no added comments, no refactoring beyond the fix. After all edits:
 
-Spawn a sub-agent with the fix-array findings. For each finding in order:
-
-1. Read the file at the indicated line.
-2. Understand the `failure_scenario`.
-3. Apply the **minimal** edit that eliminates the failure — change only what is required. No surrounding cleanup, no new comments, no refactoring beyond the fix.
-4. Continue through all findings without stopping on the first.
-
-After all edits are applied, amend the HEAD commit:
-
-> **Note:** `--no-verify` is used intentionally to prevent pre-commit hooks from blocking the automated amend. Your hooks will not run on this commit — re-run them manually if required by your workflow. `git add -A` stages all untracked files in the working tree, not only the files the skill edited — make sure you have no unrelated untracked files (e.g. secrets, generated output) before running this skill.
+> **Note:** `--no-verify` skips pre-commit hooks — re-run them manually if your workflow requires it. `git add -A` stages all untracked files, not only edited ones — ensure no unrelated files (secrets, generated output) are present.
 
 ```bash
 git add -A && git commit --amend --no-edit --no-verify
 ```
 
-Report back: which findings were fixed, and any that were skipped with a one-line reason.
+Report which findings were fixed and which were skipped with a one-line reason.
 
-### Step 4 — Next turn
-
-Continue to Step 1 of the next turn.
+**Step 4 — Next turn.** Return to Step 1.
 
 ## After turn 5
-
-If 5 turns have elapsed without the loop stopping, print:
 
 ```
 code-review-loop: reached 5-turn limit. Remaining findings:
 <JSON array of last verified fix findings>
 ```
 
-and stop.
+Stop.
