@@ -22,7 +22,7 @@ Extract the project name from args. If no project name is provided, ask for one.
 
 Before creating anything, spawn a subagent (the main agent must substitute `$KB_ROOT` and `<project-name>` with their actual values before spawning):
 
-> Run: `test -d "$KB_ROOT/<project-name>" && echo exists || echo new`
+> Run: `test -d "$KB_ROOT/projects/<project-name>" && echo exists || echo new`
 > Return the output.
 
 If the result is `exists`: ask the user — "Project `<project-name>` already exists. Overwrite? (yes/no)" — and stop until they confirm. Only proceed if they answer yes.
@@ -67,22 +67,22 @@ Empty files to ensure empty directories are tracked by git.
 
 Spawn a subagent (the main agent must substitute `$KB_ROOT` and `<project-name>` with their actual values before spawning):
 
-1. Run: `mkdir -p "$KB_ROOT/<project-name>/context" "$KB_ROOT/<project-name>/implementation/pending" "$KB_ROOT/<project-name>/implementation/complete" 2>&1`
+1. Run: `mkdir -p "$KB_ROOT/projects/<project-name>/context" "$KB_ROOT/projects/<project-name>/implementation/pending" "$KB_ROOT/projects/<project-name>/implementation/complete" 2>&1`
    Return the exit code and any output. Stop if non-zero.
-2. Write `index.md` at `$KB_ROOT/<project-name>/index.md` with the template above (substituting the actual project name).
+2. Write `index.md` at `$KB_ROOT/projects/<project-name>/index.md` with the template above (substituting the actual project name).
 3. Write empty `.gitkeep` files at:
-   - `$KB_ROOT/<project-name>/context/.gitkeep`
-   - `$KB_ROOT/<project-name>/implementation/pending/.gitkeep`
-   - `$KB_ROOT/<project-name>/implementation/complete/.gitkeep`
+   - `$KB_ROOT/projects/<project-name>/context/.gitkeep`
+   - `$KB_ROOT/projects/<project-name>/implementation/pending/.gitkeep`
+   - `$KB_ROOT/projects/<project-name>/implementation/complete/.gitkeep`
 
 If any Write in steps 2-3 fails, stop immediately and report the error — do not emit the success report.
 
-After completion, report (substitute `$KB_ROOT` and `<project-name>` with their actual values in the output below):
+After completion, report (substitute `<kb-root>` with the resolved KB_ROOT value and `<project-name>` with the actual project name):
 
 ```
 Created KB project: <project-name>
-  $KB_ROOT/<project-name>/index.md
-  $KB_ROOT/<project-name>/context/.gitkeep
-  $KB_ROOT/<project-name>/implementation/pending/.gitkeep
-  $KB_ROOT/<project-name>/implementation/complete/.gitkeep
+  <kb-root>/projects/<project-name>/index.md
+  <kb-root>/projects/<project-name>/context/.gitkeep
+  <kb-root>/projects/<project-name>/implementation/pending/.gitkeep
+  <kb-root>/projects/<project-name>/implementation/complete/.gitkeep
 ```

@@ -22,8 +22,8 @@ Extract the project name from args. If no project name is provided, ask for one.
 
 Spawn a subagent (substitute `$KB_ROOT` and `<project>` with their actual values before spawning):
 
-> Run command 1: `test -d "$KB_ROOT/<project>" && echo __EXISTS__ || echo __NOT_FOUND__`
-> Run command 2: `ls "$KB_ROOT/<project>/implementation/pending/" 2>/dev/null | grep '^step-.*\.md$' | sort -V`
+> Run command 1: `test -d "$KB_ROOT/projects/<project>" && echo __EXISTS__ || echo __NOT_FOUND__`
+> Run command 2: `ls "$KB_ROOT/projects/<project>/implementation/pending/" 2>/dev/null | grep '^step-.*\.md$' | sort -V`
 > Return the single-line output of command 1 first, then the output of command 2.
 
 If command 1 output is `__NOT_FOUND__`, report: `Project '<project>' not found in KB.` and stop.
@@ -54,7 +54,7 @@ Delegate shell commands and file operations to subagents as needed.
 - Any `gcloud … delete` on projects, clusters, or databases
 - Any `aws … delete` or `aws s3 rb` command
 - Any `gsutil rm -r` or `az … delete` command
-- Deleting or overwriting files outside the KB root
+- Deleting or overwriting files outside the current project directory (`$KB_ROOT/projects/<project>`)
 
 If any sub-step fails, stop immediately, do NOT move the file, and report what failed and what was completed so far.
 
@@ -62,10 +62,10 @@ If any sub-step fails, stop immediately, do NOT move the file, and report what f
 
 After all sub-steps succeed, spawn a subagent (substitute `$KB_ROOT`, `<project>`, and `<step-file>` with their actual values before spawning):
 
-> Run: `mv "$KB_ROOT/<project>/implementation/pending/<step-file>" "$KB_ROOT/<project>/implementation/complete/<step-file>" 2>&1`
-> Return the exit code and any stderr output.
+> Run: `mv "$KB_ROOT/projects/<project>/implementation/pending/<step-file>" "$KB_ROOT/projects/<project>/implementation/complete/<step-file>" 2>&1; echo "EXIT_CODE:$?"`
+> Return the full output including the EXIT_CODE line.
 
-**If the exit code is non-zero:** do NOT print the success template. Report:
+**If the EXIT_CODE line shows non-zero, or is absent from the output:** do NOT print the success template. Report:
 
 ```
 Move failed (exit <code>): <stderr>

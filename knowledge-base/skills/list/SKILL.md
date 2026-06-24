@@ -19,12 +19,12 @@ Extract `KB_ROOT` from the config above. Substitute its literal value everywhere
 
 Spawn a subagent to:
 
-1. Run: `find "$KB_ROOT" -mindepth 1 -maxdepth 1 -type d | sort`
+1. Run: `find "$KB_ROOT/projects" -mindepth 1 -maxdepth 1 -type d 2>/dev/null | sort`
    This lists all project directories as full paths. The project name for display is the final path segment (basename) of each path. Collect this as the project list.
 2. For each project path from step 1, run (using the full path directly as `<project-path>`):
    `find "<project-path>/implementation/pending" -maxdepth 1 -name 'step-*.md' 2>/dev/null | sort -V`
    Collect the resulting filenames as that project's pending steps.
-3. Collect all pending step file paths from step 2. If there are no pending step files across all projects, skip this step. Otherwise run `head -1` once, passing all paths as arguments, to get each file's `# Title` heading. Use the actual paths — not placeholder paths.
+3. Collect all pending step file paths from step 2. If there are no pending step files across all projects, skip this step. Otherwise run `head -1` once, passing all paths as arguments. When multiple files are given, `head -1` prefixes each result with `==> <path> <==` — parse these separator lines to pair each title with its filename. When only one file is given, no separator is emitted; the output is the title directly — pair it with the single filename.
 4. Emit the output directly in the format below — do not return intermediate structured data.
 
 ## Output format
