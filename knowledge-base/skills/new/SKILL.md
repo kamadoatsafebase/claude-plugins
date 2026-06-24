@@ -9,8 +9,8 @@ Create a new knowledge-base project with the canonical directory structure.
 
 Usage: `/new <project-name>`
 
-@/Users/kamadorueda/data/personal/claude-plugins/knowledge-base/docs/structure.md
-@/Users/kamadorueda/data/personal/claude-plugins/knowledge-base/docs/config.md
+@../../docs/structure.md
+@../../docs/config.md
 
 ---
 

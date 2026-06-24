@@ -9,7 +9,7 @@ List all knowledge-base projects and their pending implementation steps.
 
 Usage: `/list`
 
-@/Users/kamadorueda/data/personal/claude-plugins/knowledge-base/docs/config.md
+@../../docs/config.md
 
 ---
 

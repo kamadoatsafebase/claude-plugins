@@ -9,8 +9,8 @@ Execute one and only one next pending step from a KB project.
 
 Usage: `/execute <project-name>`
 
-@/Users/kamadorueda/data/personal/claude-plugins/knowledge-base/docs/structure.md
-@/Users/kamadorueda/data/personal/claude-plugins/knowledge-base/docs/config.md
+@../../docs/structure.md
+@../../docs/config.md
 
 ---
 
