@@ -9,6 +9,11 @@
   },
   "plugins": [
     {
+      "name": "orchestration",
+      "source": "./orchestration",
+      "description": "Always-on orchestration and token-efficiency rules"
+    },
+    {
       "name": "knowledge-base",
       "source": "./knowledge-base",
       "description": "Manage knowledge-base projects: create, list, and execute implementation steps"

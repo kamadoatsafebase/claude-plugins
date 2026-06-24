@@ -1,0 +1,9 @@
+{
+  "name": "orchestration",
+  "description": "Always-on orchestration and token-efficiency rules",
+  "version": "1.0.0",
+  "author": {
+    "name": "Kevin Amado",
+    "url": "https://github.com/kamadorueda/claude-plugins"
+  }
+}
