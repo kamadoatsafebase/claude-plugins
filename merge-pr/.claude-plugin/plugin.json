@@ -1,0 +1,8 @@
+{
+  "name": "merge-pr",
+  "description": "Babysit a PR until it's merged",
+  "version": "1.0.0",
+  "author": {
+    "name": "Kevin Amado"
+  }
+}

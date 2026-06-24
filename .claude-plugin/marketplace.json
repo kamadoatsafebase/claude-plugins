@@ -1,0 +1,27 @@
+{
+  "name": "personal",
+  "owner": {
+    "name": "Kevin Amado"
+  },
+  "metadata": {
+    "description": "Kevin's personal Claude Code plugins",
+    "pluginRoot": "."
+  },
+  "plugins": [
+    {
+      "name": "merge-pr",
+      "source": "./merge-pr",
+      "description": "Babysit a PR until it's merged"
+    },
+    {
+      "name": "preferences",
+      "source": "./preferences",
+      "description": "Load user preferences and CLAUDE.md instructions"
+    },
+    {
+      "name": "terminal",
+      "source": "./terminal",
+      "description": "Open any path in a new Terminal window"
+    }
+  ]
+}
