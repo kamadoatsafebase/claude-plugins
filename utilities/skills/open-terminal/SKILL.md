@@ -1,13 +1,13 @@
 ---
-name: terminal
-description: Open a path in a new Terminal window (macOS only — requires Terminal.app). Use when the user types /terminal, wants to open a directory in Terminal, or says "open X in terminal". Args are optional — defaults to cwd if omitted.
+name: open-terminal
+description: Open a path in a new Terminal window (macOS only — requires Terminal.app). Use when the user types /open-terminal, wants to open a directory in Terminal, or says "open X in terminal". Args are optional — defaults to cwd if omitted.
 ---
 
-# /terminal
+# /open-terminal
 
 Open a path in a new Terminal window.
 
-Usage: `/terminal [description]`
+Usage: `/open-terminal [description]`
 
 - With no args: opens the current working directory (`$PWD`)
 - With a description: interpret it as either a literal path or a hint about which relevant path to open (e.g. "the server app", "the terraform module", "the tests dir")

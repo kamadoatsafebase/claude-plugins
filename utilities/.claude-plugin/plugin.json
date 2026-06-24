@@ -1,6 +1,6 @@
 {
-  "name": "terminal",
-  "description": "Open any path in a new Terminal window",
+  "name": "utilities",
+  "description": "Developer utilities: merge PRs, open Terminal, and run code-review in a loop",
   "version": "1.0.0",
   "author": {
     "name": "Kevin Amado",

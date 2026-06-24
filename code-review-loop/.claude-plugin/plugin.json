@@ -1,6 +1,0 @@
-{
-  "name": "code-review-loop",
-  "description": "Run code-review in a loop, verify findings, fix valid ones, and repeat until clean",
-  "version": "1.0.0",
-  "author": { "name": "Kevin Amado", "url": "https://github.com/kamadorueda/claude-plugins" }
-}
