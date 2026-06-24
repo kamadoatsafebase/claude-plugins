@@ -7,6 +7,8 @@ description: Babysit a PR until it's merged. Use when the user types /merge-pr o
 
 This skill requires the [GitHub CLI (`gh`)](https://cli.github.com/) to be installed and authenticated. Run `gh auth status` to verify before using this skill.
 
+It also uses `ScheduleWakeup`, a built-in Claude Code harness tool used to re-check PR status after a delay. This is available in interactive Claude Code sessions but may not be available in all contexts (e.g. some CI or headless environments).
+
 # /merge-pr
 
 Babysit a PR until it's merged. The PR is already approved.

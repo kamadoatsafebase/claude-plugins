@@ -63,6 +63,8 @@ Spawn a sub-agent with the fix-array findings. For each finding in order:
 
 After all edits are applied, amend the HEAD commit:
 
+> **Note:** `--no-verify` is used intentionally to prevent pre-commit hooks from blocking the automated amend. Your hooks will not run on this commit — re-run them manually if required by your workflow.
+
 ```bash
 git add -A && git commit --amend --no-edit --no-verify
 ```

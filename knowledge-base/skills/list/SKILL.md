@@ -19,7 +19,15 @@ Extract `KB_ROOT` from the config above. Substitute its literal value everywhere
 
 Spawn a subagent to:
 
-1. Run: `find "$KB_ROOT/projects" -mindepth 1 -maxdepth 1 -type d 2>/dev/null | sort`
+1. Run: `test -d "$KB_ROOT/projects" && echo __EXISTS__ || echo __NOT_FOUND__`
+   If output is `__NOT_FOUND__`, stop and report:
+   "KB projects directory not found. Run the first-time setup before using any knowledge-base skill:
+   ```bash
+   mkdir -p ~/kb/projects ~/kb/completed-projects
+   ```
+   Then edit KB_ROOT in the config if you used a different path."
+
+   If output is `__EXISTS__`, run: `find "$KB_ROOT/projects" -mindepth 1 -maxdepth 1 -type d 2>/dev/null | sort`
    This lists all project directories as full paths. The project name for display is the final path segment (basename) of each path. Collect this as the project list.
 2. For each project path from step 1, run (using the full path directly as `<project-path>`):
    `find "<project-path>/implementation/pending" -maxdepth 1 -name 'step-*.md' 2>/dev/null | sort -V`
