@@ -19,11 +19,6 @@
       "description": "Manage knowledge-base projects: create, list, and execute implementation steps"
     },
     {
-      "name": "preferences",
-      "source": "./preferences",
-      "description": "Load user preferences and CLAUDE.md instructions"
-    },
-    {
       "name": "utilities",
       "source": "./utilities",
       "description": "Developer utilities: merge PRs, open Terminal, and run code-review in a loop"
