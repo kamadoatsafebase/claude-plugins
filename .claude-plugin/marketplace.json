@@ -9,6 +9,11 @@
   },
   "plugins": [
     {
+      "name": "code-review-loop",
+      "source": "./code-review-loop",
+      "description": "Run code-review in a loop, verify findings, fix valid ones, and repeat until clean"
+    },
+    {
       "name": "knowledge-base",
       "source": "./knowledge-base",
       "description": "Manage knowledge-base projects: create, list, and execute implementation steps"
