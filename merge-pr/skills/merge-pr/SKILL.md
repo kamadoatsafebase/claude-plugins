@@ -73,6 +73,6 @@ Log "Branch updated — waiting for checks to restart." Then schedule next check
 ## Scheduling
 
 When scheduling the next check, call `ScheduleWakeup` with:
-- `delaySeconds`: as specified above (30, 60, or 90)
+- `delaySeconds`: as specified above (30 or 90)
 - `reason`: one sentence describing what you're waiting for
-- `prompt`: `/loop /merge-pr:merge-pr <PR_URL>`
+- `prompt`: `/loop /merge-pr:merge-pr <PR_URL>` — this re-invokes the merge-pr skill via the `/loop` harness skill, which is what causes the skill to resume monitoring after the delay.

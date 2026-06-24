@@ -28,4 +28,6 @@ Once you have the absolute path, run exactly:
 open -ga Terminal <resolved-path>
 ```
 
+(the `-g` flag opens the window in the background without bringing Terminal to the front — switch to Terminal manually to see it)
+
 via Bash. Report the path you opened in one short sentence.

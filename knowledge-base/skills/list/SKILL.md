@@ -25,7 +25,7 @@ Spawn a subagent to:
    ```bash
    mkdir -p ~/kb/projects ~/kb/completed-projects
    ```
-   Then edit KB_ROOT in the config if you used a different path."
+   Only edit KB_ROOT in the config if you want a different path."
 
    If output is `__EXISTS__`, run: `find "$KB_ROOT/projects" -mindepth 1 -maxdepth 1 -type d 2>/dev/null | sort`
    This lists all project directories as full paths. The project name for display is the final path segment (basename) of each path. Collect this as the project list.

@@ -55,3 +55,13 @@ Each step file should follow this structure (no frontmatter):
   - Validation: the exact command(s) to verify
 
 **Moving steps:** When a step is completed, move its file from `pending/` to `complete/`.
+
+## Top-level layout
+
+```
+~/kb/
+├── projects/          # Active KB projects (managed by /new, /list, /execute)
+└── completed-projects/  # Optional: archive directory for fully finished projects
+```
+
+`completed-projects/` is created by the first-time setup but is not managed by any skill — it is a manual archive location for projects you consider done.
