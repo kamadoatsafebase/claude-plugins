@@ -3,6 +3,7 @@
   "description": "Babysit a PR until it's merged",
   "version": "1.0.0",
   "author": {
-    "name": "Kevin Amado"
+    "name": "Kevin Amado",
+    "url": "https://github.com/kamadorueda/claude-plugins"
   }
 }

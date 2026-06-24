@@ -3,6 +3,10 @@ name: merge-pr
 description: Babysit a PR until it's merged. Use when the user types /merge-pr or wants to monitor and auto-merge a pull request that is already approved.
 ---
 
+## Prerequisites
+
+This skill requires the [GitHub CLI (`gh`)](https://cli.github.com/) to be installed and authenticated. Run `gh auth status` to verify before using this skill.
+
 # /merge-pr
 
 Babysit a PR until it's merged. The PR is already approved.
@@ -38,6 +42,7 @@ Parse the result and build this summary:
 **CLOSED** → report "PR was closed without merging." and stop.
 
 **CLEAN** → spawn a **merger** subagent:
+> Note: this skill always merges via squash and deletes the source branch after merge. If you need a different merge strategy, edit the command below.
 > Run: `gh pr merge <PR_URL> --squash --delete-branch 2>&1`
 > Then run: `gh pr view <PR_URL> --json state,mergedAt`
 > Return both outputs.

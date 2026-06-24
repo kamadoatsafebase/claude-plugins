@@ -13,7 +13,7 @@ Any args are forwarded to each `/code-review` invocation (e.g. a branch name or 
 
 ---
 
-> **Prerequisite:** This skill requires the `code-review` skill to be installed. Install it from the Claude Code skill marketplace before using `/code-review-loop`.
+> **Prerequisite:** This skill requires the built-in `code-review` skill, which ships with Claude Code and is available by default.
 
 Maintain a **turn counter** starting at 0. Repeat the following loop until the counter reaches 5 or a stop condition is met.
 

@@ -12,7 +12,7 @@ First-time setup: create the directory before using any skill:
 ```bash
 mkdir -p ~/kb/projects ~/kb/completed-projects
 ```
-Then edit `KB_ROOT` above to match the path you used.
+Only edit `KB_ROOT` above if you used a different path.
 
 Store this variable at the start of any subagent that runs shell commands.
 
