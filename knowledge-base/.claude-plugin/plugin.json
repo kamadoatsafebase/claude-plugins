@@ -1,0 +1,8 @@
+{
+  "name": "knowledge-base",
+  "description": "Manage knowledge-base projects: create, list, and execute implementation steps",
+  "version": "1.0.0",
+  "author": {
+    "name": "Kevin Amado"
+  }
+}

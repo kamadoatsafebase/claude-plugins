@@ -9,6 +9,11 @@
   },
   "plugins": [
     {
+      "name": "knowledge-base",
+      "source": "./knowledge-base",
+      "description": "Manage knowledge-base projects: create, list, and execute implementation steps"
+    },
+    {
       "name": "merge-pr",
       "source": "./merge-pr",
       "description": "Babysit a PR until it's merged"
