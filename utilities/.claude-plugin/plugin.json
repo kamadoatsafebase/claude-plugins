@@ -1,6 +1,6 @@
 {
   "name": "utilities",
-  "description": "Developer utilities: merge PRs, open Terminal, and run code-review in a loop",
+  "description": "Developer utilities: merge a single PR, merge all open PRs, open Terminal, and run code-review in a loop",
   "version": "1.0.0",
   "author": {
     "name": "Kevin Amado",
