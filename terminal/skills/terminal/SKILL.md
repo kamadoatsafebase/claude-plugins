@@ -1,6 +1,6 @@
 ---
 name: terminal
-description: Open a path in a new Terminal window. Use when the user types /terminal, wants to open a directory in Terminal, or says "open X in terminal". Args are optional — defaults to cwd if omitted.
+description: Open a path in a new Terminal window (macOS only — requires Terminal.app). Use when the user types /terminal, wants to open a directory in Terminal, or says "open X in terminal". Args are optional — defaults to cwd if omitted.
 ---
 
 # /terminal
@@ -21,6 +21,8 @@ Determine the path to open:
 3. Otherwise treat `args` as a natural-language description and infer the most relevant absolute path from context (cwd, recent files edited, project structure, etc.). Use your best judgment — don't ask for clarification.
 
 Once you have the absolute path, run exactly:
+
+(macOS only — this command requires Terminal.app and will not work on Linux or WSL)
 
 ```
 open -ga Terminal <resolved-path>
