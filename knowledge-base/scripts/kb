@@ -71,21 +71,7 @@ cmd_init() {
     "$project_dir/implementation/pending" \
     "$project_dir/implementation/complete" || die "failed to create directories"
 
-  cat > "$project_dir/index.md" << EOF
-# $project
-
-## Intent
-
-<!-- What is this and why does it exist -->
-
-## Target Directory Structure
-
-<!-- The actual codebase/infrastructure outcome -->
-
-## Future Work
-
-<!-- Known gaps and next steps -->
-EOF
+  touch "$project_dir/index.md"
 
   echo "Created: $project_dir"
   echo "  index.md"
