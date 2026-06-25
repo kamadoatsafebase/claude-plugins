@@ -20,17 +20,18 @@ Extract the project name from args. If no project name is provided, ask for one.
 
 ## Phase 1 — Discover the next step
 
-Spawn a subagent (substitute `$KB_ROOT` and `<project>` with their actual values before spawning):
+Run via Bash (substitute the actual `KB_ROOT` value — never pass `$KB_ROOT` literally):
 
-> Run command 1: `test -d "$KB_ROOT/projects/<project>" && echo __EXISTS__ || echo __NOT_FOUND__`
-> Run command 2: `ls "$KB_ROOT/projects/<project>/implementation/pending/" 2>/dev/null | grep '^step-.*\.md$' | sort -V`
-> Return the single-line output of command 1 first, then the output of command 2.
+```bash
+KB_ROOT=<resolved-kb-root> <plugin-dir>/bin/pending-steps <project>
+```
 
-If command 1 output is `__NOT_FOUND__`, report: `Project '<project>' not found in KB.` and stop.
+where `<plugin-dir>` is the directory containing this skill file's `bin/` sibling (i.e. the knowledge-base plugin root).
 
-If command 2 output is empty, report: `No pending steps for '<project>'. Nothing to do.` and stop.
+- If the output contains `error: project not found`, report: `Project '<project>' not found in KB.` and stop.
+- If the output is `<project>: no pending steps`, report: `No pending steps for '<project>'. Nothing to do.` and stop.
 
-Pick the **first** filename — call it `<step-file>`. Read the full content of the step file by substituting the resolved `KB_ROOT` value and the project name into the path — do not pass `$KB_ROOT` literally to the Read tool.
+Each output line has the form `<project>: <step-filename>`. Pick the **first** line's filename — call it `<step-file>`. Read the full content of the step file by substituting the resolved `KB_ROOT` value and the project name into the path — do not pass `$KB_ROOT` literally to the Read tool.
 
 ## Phase 2 — Execute the step
 

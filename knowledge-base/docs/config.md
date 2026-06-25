@@ -3,14 +3,14 @@
 The KB projects root:
 
 ```
-KB_ROOT=~/kb
+KB_ROOT=~/data/kb
 ```
 
 Edit this path to match your local setup before using any knowledge-base skill.
 
 First-time setup: create the directory before using any skill:
 ```bash
-mkdir -p ~/kb/projects ~/kb/completed-projects
+mkdir -p ~/data/kb/projects ~/data/kb/completed-projects
 ```
 Only edit `KB_ROOT` above if you used a different path.
 
