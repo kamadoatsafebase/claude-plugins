@@ -3,7 +3,7 @@ name: patch-dependency-alerts
 description: Read dependency vulnerability alerts from #dependency-alerts on Slack, inspect affected repos, present a candidate table, then patch and CI-verify selected packages. Use when the user types /patch-dependency-alerts.
 ---
 
-# /dep-alert-patcher
+# /patch-dependency-alerts
 
 Read dependency alerts from Slack, inspect repos, present patching candidates, then patch and verify selected ones.
 
@@ -13,11 +13,11 @@ You are the **orchestrator**. Delegate all work to sub-agents; synthesize their 
 
 ## Repo Resolution Reference (use in every sub-agent that needs a disk path)
 
+> **Customize this table for your setup before using this skill.**
+
 | Pattern | Disk path |
 |---------|-----------|
-| `safebaselabs/qnr-server` | `/Users/kamadorueda/data/safebase/worktrees/qnr-server/tangy-isle/qnr-server` |
-| `drata/<name>` | `/Users/kamadorueda/data/drata/<name>` |
-| other `<org>/<name>` | `/Users/kamadorueda/data/<org>/<name>` |
+| `<org>/<name>` | `~/code/<org>/<name>` |
 
 If the path does not exist on disk, clone it first:
 ```
@@ -41,7 +41,7 @@ Return a JSON array grouped by repo:
 ```json
 [
   {
-    "repo": "drata/atlas",
+    "repo": "myorg/myrepo",
     "alerts": [
       {
         "package": "golang.org/x/net",
@@ -85,7 +85,7 @@ Instructions vary by `ECOSYSTEM`:
 > 1. `grep -rl '"<package>"' apps/` — record file→version pairs.
 > 2. Read root `package.json` resolutions block — is `<package>` pinned there?
 > 3. `yarn workspace <main-workspace> why <package>` — enumerate transitive chains.
->    (For `safebaselabs/qnr-server` the main workspace is `@sb/server`; for others detect from the workspaces field.)
+>    (Detect the main workspace from the `workspaces` field in root `package.json`.)
 > 4. Already resolved? (all pinned versions >= fix_version)
 > 5. Classify effort (trivial/low/medium/high).
 
@@ -156,7 +156,7 @@ Patch `<package>` from vulnerable versions to `<fix_version>`. Working dir: `<DI
 
 **All ecosystems:**
 1. Confirm working tree is clean (`git status`). Stop if dirty (untracked files are fine).
-2. `git fetch origin && git checkout -b kevin/dependency-alerts/<slug> origin/main`
+2. `git fetch origin && git checkout -b dependency-alerts/<slug> origin/main`
    (slug: strip `@`, replace `/` and `.` with `-`, e.g. `golang.org/x/net` → `golang-org-x-net`)
 
 **Go:**
@@ -167,7 +167,7 @@ Patch `<package>` from vulnerable versions to `<fix_version>`. Working dir: `<DI
 3. `yarn install && yarn run generate`
 4. Bump every workspace file from `workspace_pins` in the vulnerable range to `<fix_version>`.
    Update root `package.json` resolutions entry if `resolution_pin` exists or effort is medium/high.
-   (For `safebaselabs/qnr-server` only: `apps/yarn-constraints/yarn.config.cjs` enforces version consistency — every workspace must be bumped or CI will fail.)
+   (Check if the repo has a yarn constraints file that enforces version consistency — if so, every workspace must be bumped or CI will fail.)
 5. `yarn install`
 
 **pnpm:**
@@ -183,7 +183,7 @@ Patch `<package>` from vulnerable versions to `<fix_version>`. Working dir: `<DI
 After a successful install, create a local commit:
 ```
 git add <changed files>
-git commit -m "chore(deps): upgrade <package> to <fix_version> [REL-XXX]"
+git commit -m "chore(deps): upgrade <package> to <fix_version>"
 ```
 Do **not** push the branch or open a PR.
 
@@ -199,7 +199,7 @@ For each repo where the patch succeeded:
 
 1. Confirm current branch is `<branch_name>`. Working dir: `<DISK_PATH>`.
 2. Run CI:
-   - `safebaselabs/*` (yarn) → `safebase.global.local-ci`
+   - yarn → check `scripts` in root `package.json`; run `yarn lint && yarn test` (or detected equivalents)
    - Go → `go build ./... && go test ./...`
    - pnpm → check `scripts` in root `package.json`; run `pnpm run lint && pnpm run test` (or detected equivalents)
    - Python → `uv run ruff check . && uv run pytest`
