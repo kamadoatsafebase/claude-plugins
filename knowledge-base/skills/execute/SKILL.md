@@ -23,10 +23,10 @@ Extract the project name from args. If no project name is provided, ask for one.
 Run via Bash (substitute the actual `KB_ROOT` value — never pass `$KB_ROOT` literally):
 
 ```bash
-KB_ROOT=<resolved-kb-root> <plugin-dir>/bin/kb pending <project>
+KB_ROOT=<resolved-kb-root> <plugin-dir>/scripts/kb pending <project>
 ```
 
-where `<plugin-dir>` is the directory containing this skill file's `bin/` sibling (i.e. the knowledge-base plugin root).
+where `<plugin-dir>` is the knowledge-base plugin root (the directory containing `scripts/kb`).
 
 - If the output contains `error: project not found`, report: `Project '<project>' not found in KB.` and stop.
 - If the output is `<project>: no pending steps`, report: `No pending steps for '<project>'. Nothing to do.` and stop.

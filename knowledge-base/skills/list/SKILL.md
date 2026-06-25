@@ -16,9 +16,9 @@ Usage: `/list`
 Extract `KB_ROOT` from the config above. Run via Bash (substitute the actual `KB_ROOT` value — never pass it literally):
 
 ```bash
-KB_ROOT=<resolved-kb-root> <plugin-dir>/bin/kb list
+KB_ROOT=<resolved-kb-root> <plugin-dir>/scripts/kb list
 ```
 
-where `<plugin-dir>` is the knowledge-base plugin root (the directory containing `bin/kb`).
+where `<plugin-dir>` is the knowledge-base plugin root (the directory containing `scripts/kb`).
 
 Print the output exactly as returned.
