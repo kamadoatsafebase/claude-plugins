@@ -179,7 +179,7 @@ Patch `<package>` from vulnerable versions to `<fix_version>`. Working dir: `<DI
 4. Bump workspace pins in the vulnerable range to `<fix_version>`.
    Add/update `pnpm.overrides` in root `package.json` if effort is medium/high.
 5. `pnpm install`
-6. `pnpm run generate --if-present`
+6. `pnpm run --if-present generate`
 
 **Python:**
 3. Update the version constraint for `<package>` in `pyproject.toml` to `>= <fix_version>`.
@@ -188,7 +188,7 @@ Patch `<package>` from vulnerable versions to `<fix_version>`. Working dir: `<DI
 After all ecosystem-specific steps complete, create a local commit:
 ```
 git add -u
-git add go.mod go.sum uv.lock pnpm-lock.yaml yarn.lock 2>/dev/null; true
+git add go.mod go.sum uv.lock pnpm-lock.yaml yarn.lock 2>/dev/null || true
 git commit -m "chore(deps): upgrade <package> to <fix_version>"
 ```
 Do **not** push the branch or open a PR.
