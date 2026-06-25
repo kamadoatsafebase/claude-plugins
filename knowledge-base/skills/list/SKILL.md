@@ -13,38 +13,32 @@ Usage: `/list`
 
 ---
 
-Extract `KB_ROOT` from the config above. Substitute its literal value everywhere in this skill — in shell commands **and** in file path arguments to Read/Write tools. Never pass the string `$KB_ROOT` literally to any tool.
+Extract `KB_ROOT` from the config above. Spawn a subagent to run this script, substituting `KB_ROOT` with the literal configured value (leave it unquoted in the assignment so tilde expands):
 
-## Execution
+```bash
+PROJECTS=KB_ROOT/projects
 
-Spawn a subagent to:
+if [ ! -d "$PROJECTS" ]; then
+  echo "KB projects directory not found. Run: mkdir -p KB_ROOT/projects KB_ROOT/completed-projects"
+  exit 1
+fi
 
-1. Run: `test -d "$KB_ROOT/projects" && echo __EXISTS__ || echo __NOT_FOUND__`
-   If output is `__NOT_FOUND__`, stop and report:
-   "KB projects directory not found. Run the first-time setup before using any knowledge-base skill:
-   ```bash
-   mkdir -p ~/kb/projects ~/kb/completed-projects
-   ```
-   Only edit KB_ROOT in the config if you want a different path."
+found=0
+while IFS= read -r project_dir; do
+  project_name=$(basename "$project_dir")
+  step_files=()
+  while IFS= read -r f; do
+    step_files+=("$f")
+  done < <(find "$project_dir/implementation/pending" -maxdepth 1 -name 'step-*.md' 2>/dev/null | sort -V)
+  echo "$project_name  (${#step_files[@]} pending steps)"
+  for f in "${step_files[@]}"; do
+    echo "  • $(basename "$f") — $(head -1 "$f")"
+  done
+  echo
+  found=1
+done < <(find "$PROJECTS" -mindepth 1 -maxdepth 1 -type d 2>/dev/null | sort)
 
-   If output is `__EXISTS__`, run: `find "$KB_ROOT/projects" -mindepth 1 -maxdepth 1 -type d 2>/dev/null | sort`
-   This lists all project directories as full paths. The project name for display is the final path segment (basename) of each path. Collect this as the project list.
-2. For each project path from step 1, run (using the full path directly as `<project-path>`):
-   `find "<project-path>/implementation/pending" -maxdepth 1 -name 'step-*.md' 2>/dev/null | sort -V`
-   Collect the resulting filenames as that project's pending steps.
-3. Collect all pending step file paths from step 2. If there are no pending step files across all projects, skip this step. Otherwise run `head -1` once, passing all paths as arguments. When multiple files are given, `head -1` prefixes each result with `==> <path> <==` — parse these separator lines to pair each title with its filename. When only one file is given, no separator is emitted; the output is the title directly — pair it with the single filename.
-4. Emit the output directly in the format below — do not return intermediate structured data.
-
-## Output format
-
-One block per project, sorted alphabetically:
-
-```
-<project-name>  (<N> pending steps)
-  • step-01-foo.md — Do the first thing
-  • step-02-bar.md — Do the second thing
-
-<project-name-2>  (0 pending steps)
+[ "$found" -eq 0 ] && echo "No KB projects found."
 ```
 
-If no project directories exist, print: `No KB projects found.`
+Print the script output exactly as returned.
