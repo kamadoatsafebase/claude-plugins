@@ -93,7 +93,7 @@ Instructions vary by `ECOSYSTEM`:
 
 > Inspect `<package>` (vulnerable: `<vulnerable_range>`, fix: `<fix_version>`). Working dir: `<DISK_PATH>`.
 >
-> 1. `grep -rl '"<package>"' apps/ packages/` — record file→version pairs.
+> 1. `grep -rl '"<package>"' apps/ packages/ 2>/dev/null` — record file→version pairs.
 > 2. Read root `package.json` → `pnpm.overrides` block — is `<package>` pinned there?
 > 3. `pnpm why <package>` (from repo root) — enumerate transitive chains.
 > 4. Already resolved? (all pinned versions >= fix_version)
@@ -159,7 +159,7 @@ Patch `<package>` from vulnerable versions to `<fix_version>`. Working dir: `<DI
 
 **All ecosystems:**
 1. Confirm working tree is clean (`git status`). Stop if dirty (untracked files are fine) — return: `{"install_exit_code": 1, "install_error": "working tree is dirty", "commit_sha": null}` and stop.
-2. `git fetch origin && git checkout -B dependency-alerts/<slug> origin/main`
+2. `git fetch origin`. Check for an existing local branch: `git branch --list dependency-alerts/<slug>`. If it exists, run `git cherry origin/main dependency-alerts/<slug>` — if any line starts with `+`, stop and warn: "Branch dependency-alerts/<slug> has un-pushed commits. Delete or push it first." Then `git checkout -B dependency-alerts/<slug> origin/main`.
    (slug: strip `@`, replace `/` and `.` with `-`, e.g. `golang.org/x/net` → `golang-org-x-net`)
 
 **Go:**
@@ -167,11 +167,12 @@ Patch `<package>` from vulnerable versions to `<fix_version>`. Working dir: `<DI
 4. `go mod tidy`
 
 **yarn:**
-3. `yarn install && (yarn run generate --if-present 2>/dev/null || true)`
+3. `yarn install`
 4. Bump every workspace file from `workspace_pins` in the vulnerable range to `<fix_version>`.
    Update root `package.json` resolutions entry if `resolution_pin` exists or effort is medium/high.
    (Check if the repo has a yarn constraints file that enforces version consistency — if so, every workspace must be bumped or CI will fail.)
 5. `yarn install`
+6. `(yarn run generate --if-present 2>/dev/null || true)`
 
 **pnpm:**
 3. `pnpm install`
@@ -185,7 +186,7 @@ Patch `<package>` from vulnerable versions to `<fix_version>`. Working dir: `<DI
 
 After a successful install, create a local commit:
 ```
-git add -u
+git add -A
 git commit -m "chore(deps): upgrade <package> to <fix_version>"
 ```
 Do **not** push the branch or open a PR.
