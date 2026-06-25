@@ -2,6 +2,9 @@
 # kb <sub-command> [args]
 #
 # Sub-commands:
+#   init <project>        Create the canonical project skeleton under KB_ROOT/projects/.
+#                         Prints "exists" and exits 0 if the project already exists.
+#
 #   pending [<project>]   Print pending step filenames (machine-readable).
 #                         With a project: one line per step — "<project>: <step-file>"
 #                         Without: same for every project in KB_ROOT.
@@ -51,6 +54,46 @@ cmd_pending() {
   fi
 }
 
+# --- init ---
+
+cmd_init() {
+  local project="$1"
+  [[ -n "$project" ]] || die "usage: kb init <project-name>"
+  local project_dir="$PROJECTS/$project"
+
+  if [[ -d "$project_dir" ]]; then
+    echo "exists"
+    return 0
+  fi
+
+  mkdir -p \
+    "$project_dir/context" \
+    "$project_dir/implementation/pending" \
+    "$project_dir/implementation/complete" || die "failed to create directories"
+
+  cat > "$project_dir/index.md" << EOF
+# $project
+
+## Intent
+
+<!-- What is this and why does it exist -->
+
+## Target Directory Structure
+
+<!-- The actual codebase/infrastructure outcome -->
+
+## Future Work
+
+<!-- Known gaps and next steps -->
+EOF
+
+  echo "Created: $project_dir"
+  echo "  index.md"
+  echo "  context/"
+  echo "  implementation/pending/"
+  echo "  implementation/complete/"
+}
+
 # --- list ---
 
 cmd_list() {
@@ -76,8 +119,9 @@ cmd_list() {
 # --- dispatch ---
 
 case "${1:-}" in
+  init)    shift; cmd_init "$@" ;;
   pending) shift; cmd_pending "$@" ;;
   list)    shift; cmd_list "$@" ;;
-  "")      echo "usage: kb <pending|list> [args]" >&2; exit 1 ;;
-  *)       echo "unknown sub-command: $1" >&2; echo "usage: kb <pending|list> [args]" >&2; exit 1 ;;
+  "")      echo "usage: kb <init|pending|list> [args]" >&2; exit 1 ;;
+  *)       echo "unknown sub-command: $1" >&2; echo "usage: kb <init|pending|list> [args]" >&2; exit 1 ;;
 esac

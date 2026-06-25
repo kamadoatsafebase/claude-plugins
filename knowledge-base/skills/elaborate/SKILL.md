@@ -18,15 +18,13 @@ Extract `KB_ROOT` from the config above. Extract the project name from args. If 
 
 ## Phase 1 — Ensure project exists
 
-Spawn a subagent to run (substituting literal values for `KB_ROOT` and `<project-name>`; `${CLAUDE_SKILL_DIR}` is already resolved):
+Spawn a subagent to run (substituting the actual `KB_ROOT` value and `<project-name>`):
 
 ```bash
-if [ ! -d "KB_ROOT/projects/<project-name>" ]; then
-  bash "${CLAUDE_SKILL_DIR}/scripts/init-project.sh" KB_ROOT <project-name>
-else
-  echo "exists"
-fi
+KB_ROOT=<resolved-kb-root> <plugin-dir>/scripts/kb init <project-name>
 ```
+
+where `<plugin-dir>` is the knowledge-base plugin root (the directory containing `scripts/kb`).
 
 If the output starts with `Created:`, report it. If `exists`, continue silently. If non-zero exit, stop and report the error.
 
