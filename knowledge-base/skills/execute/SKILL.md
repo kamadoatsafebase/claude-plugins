@@ -23,7 +23,7 @@ Extract the project name from args. If no project name is provided, ask for one.
 Run via Bash (substitute the actual `KB_ROOT` value — never pass `$KB_ROOT` literally):
 
 ```bash
-KB_ROOT=<resolved-kb-root> <plugin-dir>/bin/pending-steps <project>
+KB_ROOT=<resolved-kb-root> <plugin-dir>/bin/kb pending <project>
 ```
 
 where `<plugin-dir>` is the directory containing this skill file's `bin/` sibling (i.e. the knowledge-base plugin root).

@@ -13,12 +13,12 @@ Usage: `/list`
 
 ---
 
-Extract `KB_ROOT` from the config above. Spawn a subagent to run:
+Extract `KB_ROOT` from the config above. Run via Bash (substitute the actual `KB_ROOT` value — never pass it literally):
 
 ```bash
-bash "${CLAUDE_PLUGIN_ROOT}/skills/list/scripts/list-projects.sh" KB_ROOT
+KB_ROOT=<resolved-kb-root> <plugin-dir>/bin/kb list
 ```
 
-Substitute `KB_ROOT` with the literal configured value — the shell expands `~` automatically.
+where `<plugin-dir>` is the knowledge-base plugin root (the directory containing `bin/kb`).
 
 Print the output exactly as returned.
