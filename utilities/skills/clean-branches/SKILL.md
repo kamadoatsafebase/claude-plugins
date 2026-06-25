@@ -22,6 +22,8 @@ Use the Agent tool with the following prompt to fetch and analyze branches:
 > git branch --format='%(refname:short)' | grep -vE '^(main|master)$'
 > ```
 >
+> Run `git rev-parse --verify origin/main`. If it exits non-zero, print "Error: \`origin/main\` not found. This skill requires \`origin/main\` to exist. If your default branch is named differently, run \`git cherry <remote>/<default-branch> <branch>\` manually." and stop immediately — do NOT proceed to the branch loop.
+>
 > For each branch, run `git cherry origin/main <branch>`. If `git cherry` exits non-zero, skip that branch and do not include it in `branches.txt`. Otherwise count lines starting with `+`.
 >
 > Write `branches.txt` with one line per branch that has 0 unique commits. If no branches qualify, create an empty file with `touch branches.txt`.
@@ -41,7 +43,7 @@ Use the Agent tool with the following prompt to delete the branches:
 > Read `branches.txt`.
 > Get the current branch: `git branch --show-current`.
 > If the current branch is in the list, first run `git checkout main 2>/dev/null || git checkout -b main origin/main`.
-> For each branch: run `git branch -d <branch>`. If it fails, skip the branch and print a warning instead of forcing deletion. Print each result.
+> For each branch: try `git branch -d <branch>`. If it fails, retry with `git branch -D <branch>` (safe: git cherry already verified 0 unique commits). Print each result.
 
 ## Step 5 — Cleanup
 
