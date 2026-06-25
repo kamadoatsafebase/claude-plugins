@@ -22,7 +22,7 @@ Use the Agent tool with the following prompt to fetch and analyze branches:
 > git branch --format='%(refname:short)' | grep -vE '^(main|master)$'
 > ```
 >
-> Run `git rev-parse --verify origin/main`. If it exits non-zero, print "Error: \`origin/main\` not found. This skill requires \`origin/main\` to exist. If your default branch is named differently, run \`git cherry <remote>/<default-branch> <branch>\` manually." and stop immediately — do NOT proceed to the branch loop.
+> Run `git rev-parse --verify origin/main`. If it exits non-zero, run `touch branches.txt`, print "Error: \`origin/main\` not found. This skill requires \`origin/main\` to exist. If your default branch is named differently, run \`git cherry <remote>/<default-branch> <branch>\` manually." and stop immediately — do NOT proceed to the branch loop.
 >
 > For each branch, run `git cherry origin/main <branch>`. If `git cherry` exits non-zero, skip that branch and do not include it in `branches.txt`. Otherwise count lines starting with `+`.
 >
