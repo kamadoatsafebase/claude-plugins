@@ -17,7 +17,7 @@ You are the **orchestrator**. Delegate all work to sub-agents; synthesize their 
 
 | Pattern | Disk path |
 |---------|-----------|
-| `<org>/<name>` | `~/code/<org>/<name>` |
+| `<org>/<name>` | `~/data/<org>/<name>` |
 
 If the path does not exist on disk, clone it first:
 ```
