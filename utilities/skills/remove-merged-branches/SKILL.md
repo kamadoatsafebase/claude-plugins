@@ -1,9 +1,9 @@
 ---
-name: clean-branches
-description: Find and delete local git branches that have no unique commits compared to origin/main (already merged or rebased). Use when the user types /clean-branches.
+name: remove-merged-branches
+description: Find and delete local git branches that have no unique commits compared to origin/main (already merged or rebased). Use when the user types /remove-merged-branches.
 ---
 
-# /clean-branches
+# /remove-merged-branches
 
 Delete local branches that have no unique commits compared to `origin/main`.
 
