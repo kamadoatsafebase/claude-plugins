@@ -159,7 +159,7 @@ Patch `<package>` from vulnerable versions to `<fix_version>`. Working dir: `<DI
 
 **All ecosystems:**
 1. Confirm working tree is clean (`git status`). Stop if dirty (untracked files are fine) — return: `{"install_exit_code": 1, "install_error": "working tree is dirty", "commit_sha": null}` and stop.
-2. `git fetch origin`. Check for an existing local branch: `git branch --list dependency-alerts/<slug>`. If it exists, run `git cherry origin/main dependency-alerts/<slug>` — if any line starts with `+`, stop and warn: "Branch dependency-alerts/<slug> has un-pushed commits. Delete or push it first." Then `git checkout -B dependency-alerts/<slug> origin/main`.
+2. `git fetch origin`. Detect the default branch: `DEFAULT=$(git symbolic-ref refs/remotes/origin/HEAD 2>/dev/null | sed 's|refs/remotes/origin/||')`. If empty, use `main`. Check for an existing local branch: `git branch --list dependency-alerts/<slug>`. If it exists, run `git cherry origin/$DEFAULT dependency-alerts/<slug>` — if any line starts with `+`, stop and warn: "Branch dependency-alerts/<slug> has un-pushed commits. Delete or push it first." Then `git checkout -B dependency-alerts/<slug> origin/$DEFAULT`.
    (slug: strip `@`, replace `/` and `.` with `-`, e.g. `golang.org/x/net` → `golang-org-x-net`)
 
 **Go:**
@@ -172,21 +172,23 @@ Patch `<package>` from vulnerable versions to `<fix_version>`. Working dir: `<DI
    Update root `package.json` resolutions entry if `resolution_pin` exists or effort is medium/high.
    (Check if the repo has a yarn constraints file that enforces version consistency — if so, every workspace must be bumped or CI will fail.)
 5. `yarn install`
-6. `(yarn run generate --if-present 2>/dev/null || true)`
+6. `yarn run generate --if-present`
 
 **pnpm:**
 3. `pnpm install`
 4. Bump workspace pins in the vulnerable range to `<fix_version>`.
    Add/update `pnpm.overrides` in root `package.json` if effort is medium/high.
 5. `pnpm install`
+6. `pnpm run generate --if-present`
 
 **Python:**
 3. Update the version constraint for `<package>` in `pyproject.toml` to `>= <fix_version>`.
 4. `uv lock && uv sync`
 
-After a successful install, create a local commit:
+After all ecosystem-specific steps complete, create a local commit:
 ```
-git add -A
+git add -u
+git add go.mod go.sum uv.lock pnpm-lock.yaml yarn.lock 2>/dev/null; true
 git commit -m "chore(deps): upgrade <package> to <fix_version>"
 ```
 Do **not** push the branch or open a PR.
