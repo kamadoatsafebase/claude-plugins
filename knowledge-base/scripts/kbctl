@@ -75,6 +75,7 @@ cmd_init() {
 cmd_path() {
   local project="$1"
   [[ -n "$project" ]] || die "usage: kbctl path <project>"
+  require_project "$project"
   echo "$PROJECTS/$project"
 }
 
@@ -84,7 +85,9 @@ cmd_next() {
   local project="$1"
   [[ -n "$project" ]] || die "usage: kbctl next <project>"
   require_project "$project"
-  find "$PROJECTS/$project/implementation/pending" -maxdepth 1 -name 'step-*.md' 2>/dev/null \
+  local pending_dir="$PROJECTS/$project/implementation/pending"
+  [[ -d "$pending_dir" ]] || die "implementation/pending/ missing for project: $project"
+  find "$pending_dir" -maxdepth 1 -name 'step-*.md' 2>/dev/null \
     | sort -V | head -1 | xargs -I{} basename {}
 }
 
@@ -105,11 +108,11 @@ cmd_move() {
 pending_project() {
   local project="$1"
   require_project "$project"
+  local pending_dir="$PROJECTS/$project/implementation/pending"
+  [[ -d "$pending_dir" ]] || die "implementation/pending/ missing for project: $project"
   local steps
-  steps=$(find "$PROJECTS/$project/implementation/pending" -maxdepth 1 -name 'step-*.md' 2>/dev/null | sort -V)
-  if [[ -z "$steps" ]]; then
-    echo "$project: no pending steps"
-  else
+  steps=$(find "$pending_dir" -maxdepth 1 -name 'step-*.md' 2>/dev/null | sort -V)
+  if [[ -n "$steps" ]]; then
     while IFS= read -r f; do
       echo "$project: $(basename "$f")"
     done <<< "$steps"

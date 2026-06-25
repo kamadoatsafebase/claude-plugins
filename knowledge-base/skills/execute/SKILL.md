@@ -23,7 +23,7 @@ Spawn a subagent to run:
 ${CLAUDE_PLUGIN_ROOT}/scripts/kbctl next <project>
 ```
 
-If exit code is 2, report: `Project '<project>' not found in KB.` and stop.
+If exit code is 2, report the error from stderr and stop.
 
 If output is empty, report: `No pending steps for '<project>'. Nothing to do.` and stop.
 
