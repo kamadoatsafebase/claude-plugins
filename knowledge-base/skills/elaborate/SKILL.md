@@ -9,32 +9,35 @@ Set up and collaboratively build out a KB project.
 
 Usage: `/elaborate <project-name>`
 
-@../../docs/config.md
 @../../docs/structure.md
 
 ---
 
-Extract `KB_ROOT` from the config above. Extract the project name from args. If not provided, ask for one.
+Extract the project name from args. If not provided, ask for one.
 
 ## Phase 1 — Ensure project exists
 
-Spawn a subagent to run (substituting the actual `KB_ROOT` value and `<project-name>`):
+Spawn a subagent to run:
 
 ```bash
-KB_ROOT=<resolved-kb-root> <plugin-dir>/scripts/kb init <project-name>
+${CLAUDE_PLUGIN_ROOT}/scripts/kbctl init <project-name>
 ```
-
-where `<plugin-dir>` is the knowledge-base plugin root (the directory containing `scripts/kb`).
 
 If the output starts with `Created:`, report it. If `exists`, continue silently. If non-zero exit, stop and report the error.
 
 ## Phase 2 — Read current state
 
-Read these files (substituting KB_ROOT literally):
-- `KB_ROOT/projects/<project-name>/index.md`
-- All files in `KB_ROOT/projects/<project-name>/context/`
-- All step files in `KB_ROOT/projects/<project-name>/implementation/pending/`
-- All step files in `KB_ROOT/projects/<project-name>/implementation/complete/`
+Spawn a subagent to get the project directory:
+
+```bash
+${CLAUDE_PLUGIN_ROOT}/scripts/kbctl path <project-name>
+```
+
+Using the returned path as `<project-dir>`, read:
+- `<project-dir>/index.md`
+- All files in `<project-dir>/context/`
+- All step files in `<project-dir>/implementation/pending/`
+- All step files in `<project-dir>/implementation/complete/`
 
 ## Phase 3 — Collaborate
 
@@ -50,7 +53,7 @@ Ask questions. Propose structure. Push back on vague goals. Write files as the c
 
 ## Phase 4 — Write
 
-Create or update files as the project definition clarifies, following the formats in `structure.md` above:
+Create or update files under `<project-dir>`, following the formats in `structure.md` above:
 
 - **`index.md`** — Intent, Target Directory Structure, Future Work
 - **`context/*.md`** — explain *why* and *how*, not execution history

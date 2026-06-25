@@ -1,0 +1,164 @@
+#!/usr/bin/env bash
+# kbctl <sub-command> [args]
+#
+# Sub-commands:
+#   init <project>        Create the canonical project skeleton.
+#                         Prints "exists" and exits 0 if already present.
+#
+#   path <project>        Print the absolute path to the project directory.
+#
+#   next <project>        Print the filename of the first pending step.
+#                         Empty output means no pending steps.
+#                         Exits 2 if the project is not found.
+#
+#   move <project> <step> Move a step file from pending/ to complete/.
+#                         Exits 2 if the project or step is not found.
+#
+#   pending [<project>]   Print pending step filenames (machine-readable).
+#                         With a project: one line per step — "<project>: <step-file>"
+#                         Without: same for every project.
+#                         Exits 2 if the project is not found.
+#
+#   list                  Human-readable overview: pending counts and step titles.
+#
+# KB_ROOT is read from the plugin's own docs/config.md.
+
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+PLUGIN_ROOT="$(dirname "$SCRIPT_DIR")"
+_config="$PLUGIN_ROOT/docs/config.md"
+
+if [[ -f "$_config" ]]; then
+  _raw="$(grep '^KB_ROOT=' "$_config" | head -1 | cut -d= -f2-)"
+  KB_ROOT="${_raw/#\~/$HOME}"
+fi
+KB_ROOT="${KB_ROOT:-$HOME/kb}"
+PROJECTS="$KB_ROOT/projects"
+
+die() { echo "error: $*" >&2; exit 2; }
+
+require_projects_dir() {
+  [[ -d "$PROJECTS" ]] || die "projects directory not found: $PROJECTS"
+}
+
+require_project() {
+  [[ -d "$PROJECTS/$1" ]] || die "project not found: $1"
+}
+
+# --- init ---
+
+cmd_init() {
+  local project="$1"
+  [[ -n "$project" ]] || die "usage: kbctl init <project>"
+  local project_dir="$PROJECTS/$project"
+
+  if [[ -d "$project_dir" ]]; then
+    echo "exists"
+    return 0
+  fi
+
+  mkdir -p \
+    "$project_dir/context" \
+    "$project_dir/implementation/pending" \
+    "$project_dir/implementation/complete" || die "failed to create directories"
+
+  touch "$project_dir/index.md"
+
+  echo "Created: $project_dir"
+  echo "  index.md"
+  echo "  context/"
+  echo "  implementation/pending/"
+  echo "  implementation/complete/"
+}
+
+# --- path ---
+
+cmd_path() {
+  local project="$1"
+  [[ -n "$project" ]] || die "usage: kbctl path <project>"
+  echo "$PROJECTS/$project"
+}
+
+# --- next ---
+
+cmd_next() {
+  local project="$1"
+  [[ -n "$project" ]] || die "usage: kbctl next <project>"
+  require_project "$project"
+  find "$PROJECTS/$project/implementation/pending" -maxdepth 1 -name 'step-*.md' 2>/dev/null \
+    | sort -V | head -1 | xargs -I{} basename {}
+}
+
+# --- move ---
+
+cmd_move() {
+  local project="$1" step="$2"
+  [[ -n "$project" && -n "$step" ]] || die "usage: kbctl move <project> <step>"
+  require_project "$project"
+  local src="$PROJECTS/$project/implementation/pending/$step"
+  local dst="$PROJECTS/$project/implementation/complete/$step"
+  [[ -f "$src" ]] || die "step not found in pending: $step"
+  mv "$src" "$dst"
+}
+
+# --- pending ---
+
+pending_project() {
+  local project="$1"
+  require_project "$project"
+  local steps
+  steps=$(find "$PROJECTS/$project/implementation/pending" -maxdepth 1 -name 'step-*.md' 2>/dev/null | sort -V)
+  if [[ -z "$steps" ]]; then
+    echo "$project: no pending steps"
+  else
+    while IFS= read -r f; do
+      echo "$project: $(basename "$f")"
+    done <<< "$steps"
+  fi
+}
+
+cmd_pending() {
+  require_projects_dir
+  if [[ -n "$1" ]]; then
+    pending_project "$1"
+  else
+    for project_dir in "$PROJECTS"/*/; do
+      [[ -d "$project_dir" ]] || continue
+      pending_project "$(basename "$project_dir")"
+    done
+  fi
+}
+
+# --- list ---
+
+cmd_list() {
+  require_projects_dir
+  local found=0
+  while IFS= read -r project_dir; do
+    local project_name
+    project_name=$(basename "$project_dir")
+    local step_files=()
+    while IFS= read -r f; do
+      step_files+=("$f")
+    done < <(find "$project_dir/implementation/pending" -maxdepth 1 -name 'step-*.md' 2>/dev/null | sort -V)
+    echo "$project_name  (${#step_files[@]} pending steps)"
+    for f in "${step_files[@]}"; do
+      echo "  • $(basename "$f") — $(head -1 "$f")"
+    done
+    echo
+    found=1
+  done < <(find "$PROJECTS" -mindepth 1 -maxdepth 1 -type d 2>/dev/null | sort)
+  [[ "$found" -eq 0 ]] && echo "No KB projects found."
+}
+
+# --- dispatch ---
+
+case "${1:-}" in
+  init)    shift; cmd_init "$@" ;;
+  path)    shift; cmd_path "$@" ;;
+  next)    shift; cmd_next "$@" ;;
+  move)    shift; cmd_move "$@" ;;
+  pending) shift; cmd_pending "$@" ;;
+  list)    shift; cmd_list "$@" ;;
+  "")      echo "usage: kbctl <init|path|next|move|pending|list> [args]" >&2; exit 1 ;;
+  *)       echo "unknown sub-command: $1" >&2; exit 1 ;;
+esac

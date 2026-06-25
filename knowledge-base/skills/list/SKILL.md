@@ -9,16 +9,12 @@ List all knowledge-base projects and their pending implementation steps.
 
 Usage: `/list`
 
-@../../docs/config.md
-
 ---
 
-Extract `KB_ROOT` from the config above. Run via Bash (substitute the actual `KB_ROOT` value — never pass it literally):
+Spawn a subagent to run:
 
 ```bash
-KB_ROOT=<resolved-kb-root> <plugin-dir>/scripts/kb list
+${CLAUDE_PLUGIN_ROOT}/scripts/kbctl list
 ```
-
-where `<plugin-dir>` is the knowledge-base plugin root (the directory containing `scripts/kb`).
 
 Print the output exactly as returned.
