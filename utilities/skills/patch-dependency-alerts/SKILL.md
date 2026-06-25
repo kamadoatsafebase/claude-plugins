@@ -1,6 +1,6 @@
 ---
-name: dep-alert-patcher
-description: Read dependency vulnerability alerts from #dependency-alerts on Slack, inspect affected repos, present a candidate table, then patch and CI-verify selected packages. Use when the user types /dep-alert-patcher.
+name: patch-dependency-alerts
+description: Read dependency vulnerability alerts from #dependency-alerts on Slack, inspect affected repos, present a candidate table, then patch and CI-verify selected packages. Use when the user types /patch-dependency-alerts.
 ---
 
 # /dep-alert-patcher
