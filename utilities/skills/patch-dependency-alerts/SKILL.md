@@ -74,7 +74,7 @@ Instructions vary by `ECOSYSTEM`:
 >
 > 1. Check `go.mod` — is `<package>` a direct dependency? What version?
 > 2. Run `go mod why <package>` — enumerate transitive chains.
-> 3. Already resolved? (version in go.mod >= fix_version, or package not present at all)
+> 3. Already resolved? (version in go.mod >= fix_version, or package not present at all) For pseudo-versions (`v0.0.0-YYYYMMDDHHMMSS-hash`), a pseudo-version is always older than any tagged release — if `go.mod` has a pseudo-version and `fix_version` is a tagged release, set `already_resolved: false`.
 > 4. Is fix available? Run `go list -m -versions <package>` and confirm `<fix_version>` is listed.
 > 5. Classify effort: `trivial` (patch/minor bump, direct dep), `low` (minor bump, single transitive parent), `medium` (major bump or single transitive parent with fix available), `high` (multiple transitive paths, no parent fix yet).
 
@@ -82,7 +82,7 @@ Instructions vary by `ECOSYSTEM`:
 
 > Inspect `<package>` (vulnerable: `<vulnerable_range>`, fix: `<fix_version>`). Working dir: `<DISK_PATH>`.
 >
-> 1. `grep -rl '"<package>"' apps/` — record file→version pairs.
+> 1. `grep -rl '"<package>"' apps/ packages/ 2>/dev/null` — record file→version pairs.
 > 2. Read root `package.json` resolutions block — is `<package>` pinned there?
 > 3. `yarn workspace <main-workspace> why <package>` — enumerate transitive chains.
 >    (Detect the main workspace from the `workspaces` field in root `package.json`.)
@@ -109,12 +109,15 @@ Instructions vary by `ECOSYSTEM`:
 > 4. Is fix available? Run `uv pip index versions <package>` and confirm `<fix_version>` is listed.
 > 5. Classify effort (trivial/low/medium/high).
 
+For `current_version`: Go → read from `go.mod`; yarn/pnpm → first value from `workspace_pins`, or null if empty; Python → read constraint from `pyproject.toml`.
+
 **All ecosystems return:**
 
 ```json
 {
   "repo": "...",
   "package": "...",
+  "current_version": "currently installed version string, or null if not present",
   "already_resolved": boolean,
   "is_direct_dep": boolean,
   "workspace_pins": {"file": "version"},
@@ -144,19 +147,19 @@ After all Sub-Agents 2 return, for **each repo** independently:
 
 Note any repos with no viable candidates and why (already resolved / no fix available / not on disk).
 
-Then **stop and wait** for the user to say which packages they want patched. Proceed to Sub-Agents 3 only after receiving that input.
+Then **stop and wait** for the user to say which packages they want patched. The user may respond with package names, row numbers from the table, or 'all'. Match each item to the candidate row by package name or position; if a match is ambiguous, ask for clarification before proceeding. Proceed to Sub-Agents 3 only after receiving that input.
 
 ---
 
 ## Sub-Agents 3 — Patch Agents (one per selected package, spawned one at a time)
 
-For each package the user selected, spawn one patch sub-agent.
+For each package the user selected, spawn one patch sub-agent and **wait for it to complete before spawning the next one**.
 
 Patch `<package>` from vulnerable versions to `<fix_version>`. Working dir: `<DISK_PATH>`.
 
 **All ecosystems:**
-1. Confirm working tree is clean (`git status`). Stop if dirty (untracked files are fine).
-2. `git fetch origin && git checkout -b dependency-alerts/<slug> origin/main`
+1. Confirm working tree is clean (`git status`). Stop if dirty (untracked files are fine) — return: `{"install_exit_code": 1, "install_error": "working tree is dirty", "commit_sha": null}` and stop.
+2. `git fetch origin && git checkout -B dependency-alerts/<slug> origin/main`
    (slug: strip `@`, replace `/` and `.` with `-`, e.g. `golang.org/x/net` → `golang-org-x-net`)
 
 **Go:**
@@ -164,7 +167,7 @@ Patch `<package>` from vulnerable versions to `<fix_version>`. Working dir: `<DI
 4. `go mod tidy`
 
 **yarn:**
-3. `yarn install && yarn run generate`
+3. `yarn install && (yarn run generate --if-present 2>/dev/null || true)`
 4. Bump every workspace file from `workspace_pins` in the vulnerable range to `<fix_version>`.
    Update root `package.json` resolutions entry if `resolution_pin` exists or effort is medium/high.
    (Check if the repo has a yarn constraints file that enforces version consistency — if so, every workspace must be bumped or CI will fail.)
@@ -182,7 +185,7 @@ Patch `<package>` from vulnerable versions to `<fix_version>`. Working dir: `<DI
 
 After a successful install, create a local commit:
 ```
-git add <changed files>
+git add -u
 git commit -m "chore(deps): upgrade <package> to <fix_version>"
 ```
 Do **not** push the branch or open a PR.
