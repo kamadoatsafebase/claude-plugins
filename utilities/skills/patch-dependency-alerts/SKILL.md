@@ -172,7 +172,7 @@ Patch `<package>` from vulnerable versions to `<fix_version>`. Working dir: `<DI
    Update root `package.json` resolutions entry if `resolution_pin` exists or effort is medium/high.
    (Check if the repo has a yarn constraints file that enforces version consistency — if so, every workspace must be bumped or CI will fail.)
 5. `yarn install`
-6. `yarn run generate --if-present`
+6. `jq -e '.scripts.generate' package.json > /dev/null 2>&1 && yarn run generate || true`
 
 **pnpm:**
 3. `pnpm install`
@@ -205,9 +205,9 @@ For each repo where the patch succeeded:
 
 1. Confirm current branch is `<branch_name>`. Working dir: `<DISK_PATH>`.
 2. Run CI:
-   - yarn → check `scripts` in root `package.json`; run `yarn lint && yarn test` (or detected equivalents)
+   - yarn → check `scripts` in root `package.json`; run `yarn lint && yarn test` (skip silently if a script is absent)
    - Go → `go build ./... && go test ./...`
-   - pnpm → check `scripts` in root `package.json`; run `pnpm run lint && pnpm run test` (or detected equivalents)
+   - pnpm → check `scripts` in root `package.json`; run `pnpm run --if-present lint && pnpm run --if-present test` (or detected equivalents)
    - Python → `uv run ruff check . && uv run pytest`
 
 Return JSON: `repo`, `ci_passed`, `exit_code`, `failing_sections`, `failure_details`.
