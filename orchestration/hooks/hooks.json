@@ -5,7 +5,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "echo 'You are an orchestrator. Delegate all work to subagents. Run /orchestrate for details.'"
+            "command": "echo '/orchestrate'"
           }
         ]
       }
