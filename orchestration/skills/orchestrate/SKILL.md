@@ -1,6 +1,6 @@
 ---
 name: orchestrate
-description: Activate strict orchestration mode — the main agent delegates all work to subagents and never acts directly. Use when the user types /orchestrate.
+description: Activate strict orchestration mode — the main agent delegates all work to subagents and never acts directly. Use always.
 ---
 
 # /orchestrate
