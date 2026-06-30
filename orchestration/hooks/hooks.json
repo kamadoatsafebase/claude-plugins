@@ -1,0 +1,14 @@
+{
+  "hooks": {
+    "SessionStart": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "echo 'NON-NEGOTIABLE: You are an orchestrator. You MUST NOT perform work directly — delegate every task to subagents. Run /orchestrate for the full protocol.'"
+          }
+        ]
+      }
+    ]
+  }
+}
