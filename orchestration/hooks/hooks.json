@@ -5,7 +5,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "echo '/orchestrate'"
+            "command": "cat \"$CLAUDE_PLUGIN_ROOT/prompt.txt\""
           }
         ]
       }
