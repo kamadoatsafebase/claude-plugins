@@ -36,6 +36,8 @@ tools:
   - Read
   - mcp__linear-server__get_user
   - mcp__linear-server__list_teams
+  - mcp__linear-server__get_issue
+  - mcp__linear-server__save_issue
 model: sonnet
 ---
 
