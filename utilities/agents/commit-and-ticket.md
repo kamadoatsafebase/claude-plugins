@@ -297,8 +297,9 @@ the team list could not be fetched.
 Otherwise: spawn a sub-agent, giving it only Step 5a's compact diff summary (never the
 raw diff) and asking it to draft a title and description from that summary. Then call
 `mcp__linear-server__save_issue` yourself with the drafted title/description, the
-resolved team, and, if given, the parent ticket as `parentId`. Apply an ordinary bounded
-retry on outright tool errors only, capped at 3 attempts total. Do **not** build any
+resolved team, `priority: 3` (Medium), `estimate: 1`, and, if given, the parent ticket as
+`parentId`. Apply an ordinary bounded retry on outright tool errors only, capped at 3
+attempts total. Do **not** build any
 deduplication/state-file/marker machinery — a small (~1%) chance of an occasional
 duplicate ticket on a failure/timeout is an explicitly accepted cost, not something to
 engineer around. On success, note the created ticket's key and URL for the final report.
