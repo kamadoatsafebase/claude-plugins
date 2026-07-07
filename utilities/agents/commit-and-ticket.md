@@ -330,15 +330,38 @@ otherwise-fine message.
     no key was ever present), append no bracket at all — produce a plain message with no
     ticket suffix.
 
-  Run an internal bounded retry loop, capped at 3 total attempts: write the candidate
-  message, check header length, run `commitlint --edit` against it, and regenerate on
-  failure. If all 3 attempts fail, return `{"status": "failed", "reason": "..."}` and do
-  **not** proceed to Step 8.
+  Run an internal bounded retry loop, capped at 3 total attempts. On each attempt:
+  1. Have the sub-agent write the candidate message to a scratch file (e.g. via `Write`).
+  2. **Deterministically** verify the header length yourself with Bash — never trust the
+     sub-agent's own prose claim about its length, since LLMs are unreliable at precisely
+     counting characters (long scope paths and backtick-quoted identifiers are easy to
+     undercount):
+     ```bash
+     read -r header < message.txt
+     echo "header length is ${#header}"
+     test "${#header}" -le 87 || echo "TOO_LONG"
+     ```
+     If this reports `TOO_LONG`, that attempt fails — do not proceed to commitlint for it,
+     just regenerate.
+  3. If the length check passes, run `commitlint --edit message.txt` against it (detecting
+     `commitlint` the same way as a global install / `npx --no-install commitlint` / a
+     project-local nix-managed binary, whichever resolves first). If commitlint itself
+     cannot be located by any method, skip this specific check silently and treat the
+     attempt as passing on length alone. If commitlint runs and reports violations, that
+     attempt fails — regenerate.
+
+  If all 3 attempts fail, return `{"status": "failed", "reason": "..."}` and do **not**
+  proceed to Step 8.
 
 - **If `need_new_message` is `false` but a ticket key still needs adding** (the existing
   message was already judged accurate, it just lacked a ticket): do a plain deterministic
   string append of the bracket onto the existing subject line. No LLM call needed — this
-  is pure text editing.
+  is pure text editing. Still run the same deterministic Bash header-length check as
+  above (`${#header}` ≤ 87) on the result before proceeding — an accurate subject can
+  still overflow once the bracket is appended. If it overflows, fall back to the
+  Message-Composer regeneration path above instead (this is the one case where a
+  message that started out "accurate" still needs a full LLM rewrite, since a plain
+  append can't make room for itself).
 
 - **If neither condition holds** (message accurate AND ticket already fine, or
   intentionally left mismatched-but-flagged): skip this step and Step 8 entirely. Nothing
