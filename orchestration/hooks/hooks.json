@@ -5,7 +5,28 @@
         "hooks": [
           {
             "type": "command",
-            "command": "cat \"$CLAUDE_PLUGIN_ROOT/prompt.txt\""
+            "command": "cat \"$CLAUDE_PLUGIN_ROOT/session-start.txt\""
+          }
+        ]
+      }
+    ],
+    "PreToolUse": [
+      {
+        "matcher": "Bash|Read|Edit|Write",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "\"$CLAUDE_PLUGIN_ROOT/hooks/pre-tool-use.sh\""
+          }
+        ]
+      }
+    ],
+    "UserPromptSubmit": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "\"$CLAUDE_PLUGIN_ROOT/hooks/user-prompt-submit.sh\""
           }
         ]
       }
