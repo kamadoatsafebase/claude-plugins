@@ -7,7 +7,7 @@ description: Verify the HEAD commit's message accurately reflects its diff and t
 
 Make sure HEAD's commit message is accurate and linked to a Linear ticket, filing a new ticket or rewriting the message only when needed.
 
-Usage: `/commit-and-ticket [team ENG] [parent ENG-900] [link to ENG-500] [skip ticket]`
+Usage: `/commit-and-ticket [team ENG] [parent ENG-900] [link to ENG-500] [skip ticket] [project "API Docs"] [no project]`
 
 Target is always **HEAD of the current branch**; this skill does not support selecting a different commit.
 
@@ -24,9 +24,11 @@ back.
 
 Call `Agent(subagent_type='utilities:commit-and-ticket')`, passing the user's raw
 invocation args straight through, **unparsed, as-is** — no extraction, no interpretation.
-The agent is fully self-sufficient: it parses team/parent/explicit-link/skip-ticket
-mentions out of the raw text itself, and re-derives the commit SHA, message, and diff on
-its own.
+The agent is fully self-sufficient: it parses team/parent/explicit-link/skip-ticket/
+project/no-project mentions out of the raw text itself, and re-derives the commit SHA,
+message, and diff on its own. A project (or an explicit decision to skip one) is
+mandatory whenever a new ticket ends up being created — if neither is supplied, the
+agent asks for it via the same `needs_input` mechanism it uses for a missing team.
 
 ## Step 2 — Relay the result
 
@@ -34,7 +36,7 @@ Relay whatever the agent returns as this skill's own final output, verbatim in s
 
 - If `done`: show the summary.
 - If `failed`: show the reason.
-- If `needs_input`: surface what it's asking for (e.g. the team options) directly to the
+- If `needs_input`: surface what it's asking for (e.g. the team or project options) directly to the
   user as this skill's answer. Do **not** use `AskUserQuestion` and do **not**
   automatically re-invoke the agent — getting the missing input and trying again is a
   natural follow-up (the user responds, and a future turn supplies it), not something
