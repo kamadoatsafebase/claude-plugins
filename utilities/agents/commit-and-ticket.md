@@ -382,10 +382,12 @@ Otherwise (team known, and project known or `skip_project` set): spawn a sub-age
 giving it only Step 5a's compact diff summary (never the raw diff) and asking it to
 draft a title and description from that summary. Then call
 `mcp__linear-server__save_issue` yourself with the drafted title/description, the
-resolved team, `priority: 3` (Medium), `estimate: 1`, the resolved project (omit the
-`project` parameter entirely when `skip_project` was set — never pass an empty/null
-project just to have the key present), and, if given, the parent ticket as `parentId`.
-Apply an ordinary bounded retry on outright tool errors only, capped at 3 attempts total.
+resolved team, `priority: 3` (Medium), `estimate: 1`, `assignee: "me"` (self-assign to
+the invoking user by default — always included, unconditionally), the resolved project
+(omit the `project` parameter entirely when `skip_project` was set — never pass an
+empty/null project just to have the key present), and, if given, the parent ticket as
+`parentId`. Apply an ordinary bounded retry on outright tool errors only, capped at 3
+attempts total.
 Do **not** build any deduplication/state-file/marker machinery — a small (~1%) chance of
 an occasional duplicate ticket on a failure/timeout is an explicitly accepted cost, not
 something to engineer around. On success, note the created ticket's key, URL, and
@@ -475,7 +477,8 @@ Return a concise prose summary, then the final status JSON:
 - Ticket key/URL: created, kept, or kept-but-flagged-as-mismatched (include the
   `ticket_mismatch_notes` text in that last case)
 - If a new ticket was created, state which project it was filed under, or that none was
-  assigned because `skip_project` was requested.
+  assigned because `skip_project` was requested, and note that it was self-assigned to
+  the invoking user by default.
 - If `skip_ticket` was set, say so explicitly and distinguish which situation applied —
   do not let this read the same as an ordinary "ticket already fine, nothing to do":
   - No ticket existed and none was created, by request (the common case).
