@@ -66,15 +66,12 @@ prompting — your caller is responsible for asking the user and re-invoking you
 
 ## Status contract
 
-Every exit path from this agent ends with exactly one of these four JSON shapes, and
+Every exit path from this agent ends with exactly one of these three JSON shapes, and
 nothing else claiming to be a final status. Emit it as a small, clearly delimited JSON
 block at the very end of your response, after any prose summary:
 
 ```json
-{"status": "needs_input", "missing": "team", "available_teams": [...]}
-```
-```json
-{"status": "needs_input", "missing": "project", "available_projects": [...]}
+{"status": "needs_input", "missing": "team" | "project", "options": [...]}
 ```
 ```json
 {"status": "done", "summary": "..."}
@@ -83,30 +80,13 @@ block at the very end of your response, after any prose summary:
 {"status": "failed", "reason": "..."}
 ```
 
-`available_teams` is the `teams` array from `mcp__linear-server__list_teams`'s response,
-passed through as-is — never fabricate teams. The confirmed live response shape is a
-top-level object `{"teams": [...], "hasNextPage": bool, "cursor": "<id>"}`; each element
-of `teams` is an object with `id` (string UUID), `name` (string), `icon` (string — an
-emoji-shortcode-like value, e.g. `:mountain:`, or a bare identifier, e.g. `Europe`),
-`createdAt` / `updatedAt` (ISO-8601 timestamp strings), and an optional `description`
-(string, not present on every team). There is no `key` or `color` field — identify a team
-by `id` (or `name` for a human-facing prompt), not by a short key.
-
-`available_projects` is the `projects` array from `mcp__linear-server__list_projects`'s
-response, passed through as-is — never fabricate projects. The confirmed live response
-shape is a top-level object `{"projects": [...], "hasNextPage": bool, "cursor": "<id>"}`;
-each element of `projects` is an object with `id` (string UUID), `name` (string), `icon`
-(string or null), `color` (string, hex), `summary` (string, may be empty), `description`
-(string, may be empty or truncated), `url` (string), `createdAt` / `updatedAt` /
-`startedAt` / `completedAt` / `canceledAt` (ISO-8601 timestamp strings or null),
-`startDate` / `targetDate` (date strings or null, each with a matching `*Resolution`
-field), `priority` (object with `value` / `name`), `labels` (array), `initiatives`
-(array), `lead` (object with `id` / `name`, or null), `status` (object with `id` / `name`
-/ `type`), and `teams` (array of objects with `id` / `name` / `key`). There is no
-top-level `key` field for a project — identify one by `id` (or `name` / `url` for a
-human-facing prompt). `mcp__linear-server__save_issue`'s `project` parameter itself
-accepts a project name, ID, or slug directly, so whichever of those you resolve a project
-to can be passed straight through with no further lookup.
+`options` is the `teams` array from `mcp__linear-server__list_teams` (when `missing` is
+`"team"`) or the `projects` array from `mcp__linear-server__list_projects` (when `missing`
+is `"project"`), passed through as-is — never fabricate entries. Neither response
+includes a short `key` field — identify a team or project by `id` (or `name` for a
+human-facing prompt). `mcp__linear-server__save_issue`'s `project` parameter accepts a
+project name, ID, or slug directly, so whichever of those you resolve a project to can be
+passed straight through with no further lookup.
 
 ## Step 1 — Parse inputs
 
@@ -138,17 +118,16 @@ Any or all of these may be absent. Treat absence as a normal case, not an error.
 `skip_ticket` is equivalent to `skip_ticket = false`; absent `skip_project` is equivalent
 to `skip_project = false`.
 
-**Retry precedence.** If you previously returned `{"status": "needs_input", "missing": "team", ...}`
-or `{"status": "needs_input", "missing": "project", ...}` and are now being re-invoked,
-your caller will pass the original raw args again *plus* the now-resolved value(s),
-stated explicitly (e.g. "resolved team: ENG" and/or "resolved project: API Docs", or
-similar clearly-labeled framing distinct from the original freeform text). When your
-invocation prompt contains such an explicitly-labeled resolved team or resolved project,
-that value **always takes priority** over anything you might otherwise parse (or fail to
-parse) out of the original freeform portion of the prompt — do not re-derive,
-second-guess, or override it with a different reading of the freeform text. An
-explicitly-labeled resolved value is authoritative; an ambiguous or absent mention inside
-freeform text is not.
+**Retry precedence.** If you previously returned a `needs_input` status for `team` or
+`project` and are now being re-invoked, your caller will pass the original raw args again
+*plus* the now-resolved value(s), stated explicitly (e.g. "resolved team: ENG" and/or
+"resolved project: API Docs", or similar clearly-labeled framing distinct from the
+original freeform text). When your invocation prompt contains such an explicitly-labeled
+resolved team or resolved project, that value **always takes priority** over anything you
+might otherwise parse (or fail to parse) out of the original freeform portion of the
+prompt — do not re-derive, second-guess, or override it with a different reading of the
+freeform text. An explicitly-labeled resolved value is authoritative; an ambiguous or
+absent mention inside freeform text is not.
 
 ## Step 2 — Snapshot
 
@@ -173,18 +152,18 @@ isn't) in the subject line, and no extraction is needed.
 
 ## Step 3 — Preflight (conditional)
 
-Linear is touched in exactly three places later in this flow: the early gate's
-`list_teams` / `list_projects` calls (Step 4, only when a team and/or project must be
-resolved), the ticket-fetch sub-agent (Step 5b, only when a ticket key is present), and
-Ticket-Creator (Step 7a, only when `need_new_ticket` is true). Preflight exists to catch
-a missing/unreachable Linear MCP before any of those three points, so it only needs to
-run when at least one of them could actually fire.
+Linear is touched in exactly three places later in this flow: the Resolve-team/project
+procedure below (Step 4, only when team and/or project must be resolved), the
+ticket-fetch sub-agent (Step 5b, only when a ticket key is present), and Ticket-Creator
+(Step 7a, only when `need_new_ticket` is true). Preflight exists to catch a
+missing/unreachable Linear MCP before any of those three points, so it only needs to run
+when at least one of them could actually fire.
 
 **Skip condition — run this check first:** skip Preflight entirely, with no Linear call
 at all, if and only if **`skip_ticket` is `true` AND no ticket key was found** (neither
 from Step 2's bracket extraction nor from an explicit ticket link in Step 1). Under this
 exact combination: Step 7a can never run (`need_new_ticket` is forced `false` by Step
-6's `skip_ticket` override — see there), Step 4's gate can never fire (already gated on
+6's `skip_ticket` override — see there), Step 4 can never fire (already gated on
 `skip_ticket` being unset), and Step 5b can never run (no key exists for it to fetch) —
 so none of the three Linear-touching points are reachable this run, and Preflight has
 nothing to protect.
@@ -205,51 +184,43 @@ Optionally attempt to run that command via Bash; if it fails, tell the user to r
 manually. Either way, stop here — return `{"status": "failed", "reason": "..."}` and do
 not proceed to Step 4.
 
+## Resolve team/project (shared procedure)
+
+This procedure resolves team, then project, in that order, stopping at the first one
+still missing. It's invoked from two places with **identical** behavior at both call
+sites: Step 4 below (the common path — no ticket bracket/explicit link/`skip_ticket`),
+and Step 7a's escape hatch (the rarer path — a bracket WAS present, but the Judge found
+its ticket unresolvable, so Step 4 never ran).
+
+1. **Team.** If no team is known (not supplied in Step 1, not resolved via retry
+   precedence), fetch options via `mcp__linear-server__list_teams`. If that call fails or
+   errors (distinct from succeeding with an empty list), do not guess or fabricate a
+   team — stop and return `{"status": "failed", "reason": "..."}`, explaining that Linear
+   was reachable but the team list couldn't be fetched. Otherwise stop and return
+   `{"status": "needs_input", "missing": "team", "options": [...]}`.
+2. **Project.** Only checked once team is known. If `skip_project` is **not** set AND no
+   project is known (not supplied in Step 1, not resolved via retry precedence), fetch
+   options via `mcp__linear-server__list_projects`, scoped to the resolved team via its
+   `team` parameter. If that call fails or errors, do not guess or fabricate a project —
+   stop and return `{"status": "failed", "reason": "..."}`, explaining that Linear was
+   reachable but the project list couldn't be fetched. Otherwise stop and return
+   `{"status": "needs_input", "missing": "project", "options": [...]}`.
+3. Otherwise (team known, and project known or `skip_project` set): resolution is
+   complete — return control to the caller and continue past whichever step invoked this
+   procedure.
+
 ## Step 4 — Early gate (no bracket, no explicit link, not skipping tickets)
 
 If no key was extracted in Step 2, AND no explicit ticket link was supplied in Step 1,
 AND `skip_ticket` is **not** set — ticket creation will definitely be needed later. Before
 doing any further work (no diff-summary, no Judge — there's no point doing that work
-before you know you can actually create the ticket), resolve team and then project,
-stopping at the first one that's still missing:
+before you know you can actually create the ticket), run the Resolve team/project
+procedure above. If it returned `needs_input` or `failed`, stop and return that result
+verbatim. Otherwise continue to Step 5.
 
-**4a — Team.** If no team was supplied in Step 1 (including via retry precedence), fetch
-real team options via `mcp__linear-server__list_teams` (or equivalent), then stop and
-return:
-```json
-{"status": "needs_input", "missing": "team", "available_teams": [...]}
-```
-
-**If `list_teams` itself fails or errors** (distinct from succeeding with an empty list):
-do not guess a team and do not fabricate options. Stop cold and return instead:
-```json
-{"status": "failed", "reason": "..."}
-```
-with a `reason` explaining that the Linear MCP was reachable enough to get this far, but
-the team list could not be fetched.
-
-**4b — Project.** Only reached once a team is known (supplied initially, or resolved via
-retry, or just resolved in 4a's prior invocation). If `skip_project` is **not** set AND no
-project was supplied in Step 1 (including via retry precedence), fetch real project
-options scoped to the resolved team via `mcp__linear-server__list_projects` (passing the
-resolved team as its `team` parameter), then stop and return:
-```json
-{"status": "needs_input", "missing": "project", "available_projects": [...]}
-```
-
-**If `list_projects` itself fails or errors** (distinct from succeeding with an empty
-list): do not guess a project and do not fabricate options. Stop cold and return instead:
-```json
-{"status": "failed", "reason": "..."}
-```
-with a `reason` explaining that the Linear MCP was reachable enough to get this far, but
-the project list could not be fetched.
-
-Otherwise (bracket present, OR an explicit link was already supplied, OR `skip_ticket` is
-set, OR — having passed 4a and 4b — a team is known and either a project is known or
-`skip_project` is set), continue to Step 5. In particular, if `skip_ticket` is set and
-nothing else is present, this gate must **never** fire — proceed straight to Fan-out even
-with no team or project, since neither will ever be needed this run.
+If `skip_ticket` is set, or a bracket/explicit link is present, this gate must **never**
+fire — the procedure above must not run, and you proceed straight to Step 5 even with no
+team or project known, since neither will ever be needed this run.
 
 ## Step 5 — Fan-out (parallel)
 
@@ -301,20 +272,14 @@ Field rules:
   topically related to the diff?
 - `ticket_resolvable` (bool or null): `false` if Step 5b reported `ticket_found: false`.
 - `need_new_ticket` (bool): `true` if no key was present, OR a key was present but the
-  ticket is unresolvable/deleted. **Exception — `skip_ticket` override:** if `skip_ticket`
-  is set, `need_new_ticket` is always `false`, unconditionally, regardless of what the
-  rest of this rule would otherwise produce. This includes the unresolvable/deleted-ticket
-  sub-case: normally a present-but-unresolvable key sets `need_new_ticket = true`, but
-  under `skip_ticket` it must not — the entire point of `skip_ticket` is no ticket
-  creation this run, period. Instead, note this specific situation (bracket present,
-  ticket unresolvable, `skip_ticket` set) for the final report as an existing-but-broken
-  reference that was left alone by request — conceptually parallel to how
-  `ticket_mismatch_notes` flags a present-but-irrelevant ticket rather than acting on it,
-  though it is not itself an irrelevance case and doesn't need to reuse that same field.
-  `skip_ticket` only ever suppresses *creating* a ticket — it has no effect on
-  `ticket_relevant` or `ticket_resolvable` themselves, and no effect at all when a bracket
-  is present and its ticket resolves normally (still evaluate relevance as usual in that
-  case — `skip_ticket` only matters in the no-key-present or unresolvable-key cases).
+  ticket is unresolvable/deleted. **Exception:** if `skip_ticket` is set, `need_new_ticket`
+  is always `false` — even in the unresolvable-key sub-case. In that specific situation
+  (bracket present, ticket unresolvable, `skip_ticket` set), note it for the final report
+  as an existing-but-broken reference left alone by request; this is distinct from
+  `ticket_mismatch_notes`, which is for a resolvable-but-irrelevant ticket. `skip_ticket`
+  only ever suppresses *creating* a ticket — it never affects `ticket_relevant` or
+  `ticket_resolvable`, and has no effect at all when a bracket's ticket resolves normally
+  (still evaluate relevance as usual in that case).
 - `ticket_mismatch_notes` (string or null): fill in **only** when a ticket is present,
   resolvable, but **not** relevant to the diff. In that case `need_new_ticket` stays
   `false` — a present-but-mismatched human-assigned ticket is never auto-replaced, only
@@ -336,47 +301,13 @@ one, or neither may apply.
 
 Only if `need_new_ticket` is `true` **and** no explicit ticket link was supplied.
 
-**Unified escape hatch — check this first, team then project:** if `need_new_ticket` is
-`true`, team and project must both be resolved (or project explicitly waived via
-`skip_project`) before creating anything. This step is most often reached via the rarer
-path where a bracket WAS present in Step 2, but the Judge found that referenced ticket
-unresolvable, so Step 4's gate never fired (it only fires on the no-bracket case) — but
-it equally covers the case where Step 4 already resolved team and is now being
-re-invoked to resolve project. Check in this order:
-
-- **Team.** If no team is available at all (none was supplied in Step 1, and none can be
-  inferred), do **not** guess a team and do **not** skip team selection. Fetch team
-  options the same way as Step 4a and stop, returning the exact same contract used there:
-  ```json
-  {"status": "needs_input", "missing": "team", "available_teams": [...]}
-  ```
-  This is deliberately the same shape as Step 4a's gate — one consistent contract used at
-  both points in this flow, rather than two different mechanisms.
-
-  **If `list_teams` itself fails or errors here** (same distinction as Step 4a — this is
-  not the empty-list case): do not guess a team and do not fabricate options. Stop cold
-  and return, identically to Step 4a:
-  ```json
-  {"status": "failed", "reason": "..."}
-  ```
-  with a `reason` explaining that the Linear MCP was reachable enough to get this far,
-  but the team list could not be fetched.
-
-- **Project.** Only checked once team is resolved. If `skip_project` is **not** set AND
-  no project is available (none was supplied in Step 1, and none can be inferred), fetch
-  project options the same way as Step 4b and stop, returning the exact same contract
-  used there:
-  ```json
-  {"status": "needs_input", "missing": "project", "available_projects": [...]}
-  ```
-  **If `list_projects` itself fails or errors here** (same distinction as Step 4b): do
-  not guess a project and do not fabricate options. Stop cold and return, identically to
-  Step 4b:
-  ```json
-  {"status": "failed", "reason": "..."}
-  ```
-  with a `reason` explaining that the Linear MCP was reachable enough to get this far,
-  but the project list could not be fetched.
+**Escape hatch — check this first:** if `need_new_ticket` is `true`, run the Resolve
+team/project procedure defined before Step 4 (this is the rarer path — a bracket WAS
+present in Step 2, but the Judge found that referenced ticket unresolvable, so Step 4's
+gate never fired, and team/project may still be fully or partially unresolved). If it
+returned `needs_input` or `failed`, stop and return that result verbatim — the same
+contract used at Step 4, so there is one consistent mechanism used at both points in this
+flow rather than two.
 
 Otherwise (team known, and project known or `skip_project` set): spawn a sub-agent,
 giving it only Step 5a's compact diff summary (never the raw diff) and asking it to
@@ -387,11 +318,10 @@ the invoking user by default — always included, unconditionally), the resolved
 (omit the `project` parameter entirely when `skip_project` was set — never pass an
 empty/null project just to have the key present), and, if given, the parent ticket as
 `parentId`. Apply an ordinary bounded retry on outright tool errors only, capped at 3
-attempts total.
-Do **not** build any deduplication/state-file/marker machinery — a small (~1%) chance of
-an occasional duplicate ticket on a failure/timeout is an explicitly accepted cost, not
-something to engineer around. On success, note the created ticket's key, URL, and
-project (or that none was assigned, by request) for the final report.
+attempts total. Do **not** build any deduplication/state-file/marker machinery — a small
+(~1%) chance of an occasional duplicate ticket on a failure/timeout is an explicitly
+accepted cost, not something to engineer around. On success, note the created ticket's
+key, URL, and project (or that none was assigned, by request) for the final report.
 
 ### Step 7b — Message-Composer
 
@@ -473,12 +403,11 @@ Clean up any scratch files used along the way.
 ## Step 9 — Report
 
 Return a concise prose summary, then the final status JSON:
-- Old subject → new subject (or "no changes needed")
-- Ticket key/URL: created, kept, or kept-but-flagged-as-mismatched (include the
-  `ticket_mismatch_notes` text in that last case)
-- If a new ticket was created, state which project it was filed under, or that none was
-  assigned because `skip_project` was requested, and note that it was self-assigned to
-  the invoking user by default.
+- Old subject → new subject (or "no changes needed").
+- Ticket key/URL: created (state the project it was filed under, or "no project" if
+  `skip_project` was requested, and note it was self-assigned to the invoking user by
+  default), kept, or kept-but-flagged-as-mismatched (include the `ticket_mismatch_notes`
+  text in that last case).
 - If `skip_ticket` was set, say so explicitly and distinguish which situation applied —
   do not let this read the same as an ordinary "ticket already fine, nothing to do":
   - No ticket existed and none was created, by request (the common case).
