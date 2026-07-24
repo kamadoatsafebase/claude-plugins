@@ -72,12 +72,19 @@ ${CLAUDE_PLUGIN_ROOT}/scripts/kbctl move <project> <step-file>
 
 If non-zero exit, report the error and do NOT print the success template.
 
+On success, the command prints only one line:
+
+```
+pending=M
+```
+
+Parse `M` (remaining pending step count) from this output — do not derive it any other way.
+
 ## Phase 4 — Report
 
 ```
-Executed: <step-title>
-  Project : <project-name>
-  Step    : <step-file>
-  Status  : complete
-  Moved to: implementation/complete/<step-file>
+  Project      : <project-name>
+  Executed.    : <step-file>
+  Status       : complete
+  Pending Steps: <M>
 ```

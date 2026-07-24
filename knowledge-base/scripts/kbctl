@@ -12,6 +12,8 @@
 #                         Exits 2 if the project is not found.
 #
 #   move <project> <step> Move a step file from pending/ to complete/.
+#                         On success prints one line: "pending=M" (remaining
+#                         pending step count after the move).
 #                         Exits 2 if the project or step is not found.
 #
 #   pending [<project>]   Print pending step filenames (machine-readable).
@@ -97,10 +99,16 @@ cmd_move() {
   local project="$1" step="$2"
   [[ -n "$project" && -n "$step" ]] || die "usage: kbctl move <project> <step>"
   require_project "$project"
-  local src="$PROJECTS/$project/implementation/pending/$step"
+  local pending_dir="$PROJECTS/$project/implementation/pending"
+  local src="$pending_dir/$step"
   local dst="$PROJECTS/$project/implementation/complete/$step"
   [[ -f "$src" ]] || die "step not found in pending: $step"
-  mv "$src" "$dst"
+  mv "$src" "$dst" || die "failed to move step: $step"
+
+  local pending_count
+  pending_count="$(find "$pending_dir" -maxdepth 1 -name 'step-*.md' 2>/dev/null | wc -l | tr -d ' ')"
+
+  echo "pending=$pending_count"
 }
 
 # --- pending ---
