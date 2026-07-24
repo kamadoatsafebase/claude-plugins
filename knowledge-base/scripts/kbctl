@@ -11,6 +11,10 @@
 #                         Empty output means no pending steps.
 #                         Exits 2 if the project is not found.
 #
+#   next-index <project>  Print the next unused step index across pending/
+#                         and complete/, zero-padded to two digits (e.g. "05").
+#                         Exits 2 if the project is not found.
+#
 #   move <project> <step> Move a step file from pending/ to complete/.
 #                         On success prints one line: "pending=M" (remaining
 #                         pending step count after the move).
@@ -93,6 +97,25 @@ cmd_next() {
     | sort -V | head -1 | xargs -I{} basename {}
 }
 
+# --- next-index ---
+
+cmd_next_index() {
+  local project="$1"
+  [[ -n "$project" ]] || die "usage: kbctl next-index <project>"
+  require_project "$project"
+  local project_dir="$PROJECTS/$project"
+
+  local max=0 num f
+  while IFS= read -r f; do
+    [[ -n "$f" ]] || continue
+    num="$(basename "$f" | sed -E 's/^step-0*([0-9]+).*/\1/')"
+    [[ "$num" =~ ^[0-9]+$ ]] || continue
+    (( num > max )) && max=$num
+  done < <(find "$project_dir/implementation/pending" "$project_dir/implementation/complete" -maxdepth 1 -name 'step-*.md' 2>/dev/null)
+
+  printf '%02d\n' "$(( max + 1 ))"
+}
+
 # --- move ---
 
 cmd_move() {
@@ -164,12 +187,13 @@ cmd_list() {
 # --- dispatch ---
 
 case "${1:-}" in
-  init)    shift; cmd_init "$@" ;;
-  path)    shift; cmd_path "$@" ;;
-  next)    shift; cmd_next "$@" ;;
-  move)    shift; cmd_move "$@" ;;
-  pending) shift; cmd_pending "$@" ;;
-  list)    shift; cmd_list "$@" ;;
-  "")      echo "usage: kbctl <init|path|next|move|pending|list> [args]" >&2; exit 1 ;;
+  init)       shift; cmd_init "$@" ;;
+  path)       shift; cmd_path "$@" ;;
+  next)       shift; cmd_next "$@" ;;
+  next-index) shift; cmd_next_index "$@" ;;
+  move)       shift; cmd_move "$@" ;;
+  pending)    shift; cmd_pending "$@" ;;
+  list)       shift; cmd_list "$@" ;;
+  "")      echo "usage: kbctl <init|path|next|next-index|move|pending|list> [args]" >&2; exit 1 ;;
   *)       echo "unknown sub-command: $1" >&2; exit 1 ;;
 esac

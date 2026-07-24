@@ -57,6 +57,6 @@ Create or update files under `<project-dir>`, following the formats in `structur
 
 - **`index.md`** — Intent, Target Directory Structure, Future Work
 - **`context/*.md`** — explain *why* and *how*, not execution history
-- **`implementation/pending/step-NN-<slug>.md`** — numbered from the next unused index; each file: `# Title`, **Goal** paragraph, `## Steps` with numbered items (Action, Expected, Validation)
+- **`implementation/pending/step-NN-<slug>.md`** — get `NN` by running `${CLAUDE_PLUGIN_ROOT}/scripts/kbctl next-index <project-name>`; each file: `# Title`, **Goal** paragraph, `## Steps` with numbered items (Action, Expected, Validation)
 
 Rename or resequence existing step files if needed.
