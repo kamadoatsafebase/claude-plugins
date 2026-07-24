@@ -84,7 +84,7 @@ Parse `M` (remaining pending step count) from this output — do not derive it a
 
 ```
   Project      : <project-name>
-  Executed.    : <step-file>
+  Executed     : <step-file>
   Status       : complete
   Pending Steps: <M>
 ```
