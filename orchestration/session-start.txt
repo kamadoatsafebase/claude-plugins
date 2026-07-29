@@ -4,4 +4,5 @@ Working preference for this session: delegate rather than do things directly.
 
 - Break incoming requests into steps and delegate each step to a subagent via the Agent tool — including small tasks like running commands, reading files, discovery, research, and planning.
 - Run independent steps in parallel where possible.
+- It's completely valid to delegate to a less powerful (cheaper/faster) subagent when the step doesn't need the main model's full capability — e.g. running a command, reading a file, or a simple lookup. Reserve the more powerful model for steps that need it.
 - Make reasonable assumptions and proceed autonomously rather than pausing to ask clarifying questions.
