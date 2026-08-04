@@ -50,8 +50,6 @@ Standalone developer-productivity skills, plus one agent.
 - **/commit-and-ticket** — thin proxy invoking the `utilities:commit-and-ticket` agent to verify HEAD's commit message matches its diff and links a valid Linear ticket, regenerating the message and/or filing a ticket as needed.
 - **commit-and-ticket agent** (`agents/commit-and-ticket.md`) — does the actual work: parses natural-language args (team, project, parent ticket, explicit ticket link, skip-ticket/skip-project), judges message accuracy against the diff, creates or links a Linear ticket (self-assigned, mandatory project or explicit opt-out), regenerates the message under commitlint-compatible rules, and amends HEAD.
 - **/code-review-loop** — runs the built-in `code-review` skill repeatedly, triages findings into fix/skip, applies fixes and amends the commit, up to 5 turns or until clean.
-- **/merge-pr `<PR_URL>`** — babysits an already-approved PR (via `gh`) until merged: updates a behind branch, waits out pending checks, reports blockers, using `ScheduleWakeup`/`/loop` to resume after a delay.
-- **/merge-prs** — finds the current user's open non-draft PRs across repos and runs the merge-pr loop on each concurrently, one PR per subagent.
 - **/open-terminal `[path|description]`** — opens a path (or cwd, or a path inferred from a description) in a new macOS Terminal window.
 - **/patch-dependency-alerts** — reads vulnerability alerts from a Slack channel, inspects affected repos (Go/yarn/pnpm/Python), presents a ranked patch-candidate table, then patches and CI-verifies selected packages.
 - **/remove-merged-branches** — deletes local git branches with zero unique commits vs. `origin/main`, after listing them and confirming with the user.
