@@ -1,6 +1,6 @@
 {
   "name": "utilities",
-  "description": "Developer utilities: merge a single PR, merge all open PRs, open Terminal, run code-review in a loop, and reconcile commit messages with Linear tickets",
+  "description": "Developer utilities: merge a single PR, merge all open PRs, open Terminal, run code-review in a loop, reconcile commit messages with Linear tickets, and run the full elaborate-to-PR pipeline end to end",
   "version": "1.0.0",
   "author": {
     "name": "Kevin Amado",
