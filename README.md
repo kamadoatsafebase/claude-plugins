@@ -51,11 +51,9 @@ Standalone developer-productivity skills, plus one agent.
 - **commit-and-ticket agent** (`agents/commit-and-ticket.md`) — does the actual work: parses natural-language args (team, project, parent ticket, explicit ticket link, skip-ticket/skip-project), judges message accuracy against the diff, creates or links a Linear ticket (self-assigned, mandatory project or explicit opt-out), regenerates the message under commitlint-compatible rules, and amends HEAD.
 - **/code-review-loop** — runs the built-in `code-review` skill repeatedly, triages findings into fix/skip, applies fixes and amends the commit, up to 5 turns or until clean.
 - **/open-terminal `[path|description]`** — opens a path (or cwd, or a path inferred from a description) in a new macOS Terminal window.
-- **/patch-dependency-alerts** — reads vulnerability alerts from a Slack channel, inspects affected repos (Go/yarn/pnpm/Python), presents a ranked patch-candidate table, then patches and CI-verifies selected packages.
 - **/remove-merged-branches** — deletes local git branches with zero unique commits vs. `origin/main`, after listing them and confirming with the user.
 
 ## Notes / gaps
 
 - `knowledge-base/docs/config.md` hardcodes `KB_ROOT=~/data/kb` — edit before using knowledge-base skills on a new setup.
-- `utilities/skills/patch-dependency-alerts/SKILL.md`'s "Repo Resolution Reference" table also needs per-user/org customization.
 - No repo-level `CLAUDE.md`; orchestration behavior comes solely from the `orchestration` plugin's hooks.
