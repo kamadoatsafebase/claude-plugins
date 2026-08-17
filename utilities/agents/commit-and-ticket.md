@@ -45,13 +45,18 @@ tools:
   - Bash
   - Agent
   - Read
-  - mcp__linear-server__get_user
-  - mcp__linear-server__list_teams
-  - mcp__linear-server__list_projects
-  - mcp__linear-server__get_issue
-  - mcp__linear-server__save_issue
 model: sonnet
 ---
+
+<!--
+No Linear tool is declared above, deliberately. How this environment reaches Linear is
+not uniform — some setups connect a Linear MCP server directly, and connector names vary
+by how each person set theirs up (`linear-server`, `claude_ai_Linear`, etc.). Naming one
+literal `mcp__<server>__*` tool would bake in a guess that breaks for anyone using a
+different connector name. So this agent states WHAT Linear operation it needs (get the
+current user, list teams, list projects, fetch an issue, create/update an issue) and lets
+the runtime supply HOW — whatever Linear MCP tool is actually connected this session.
+-->
 
 You are handling commit-message accuracy and Linear-ticket linkage for **HEAD of the
 current branch**. This is a fixed target — never attempt to select or discover a
@@ -80,12 +85,12 @@ block at the very end of your response, after any prose summary:
 {"status": "failed", "reason": "..."}
 ```
 
-`options` is the `teams` array from `mcp__linear-server__list_teams` (when `missing` is
-`"team"`) or the `projects` array from `mcp__linear-server__list_projects` (when `missing`
-is `"project"`), passed through as-is — never fabricate entries. Neither response
-includes a short `key` field — identify a team or project by `id` (or `name` for a
-human-facing prompt). `mcp__linear-server__save_issue`'s `project` parameter accepts a
-project name, ID, or slug directly, so whichever of those you resolve a project to can be
+`options` is the `teams` array from Linear's list-teams tool (when `missing` is `"team"`)
+or the `projects` array from Linear's list-projects tool (when `missing` is `"project"`),
+passed through as-is — never fabricate entries. Neither response includes a short `key`
+field — identify a team or project by `id` (or `name` for a human-facing prompt).
+Linear's issue-create/update tool typically accepts a project name, ID, or slug directly
+for its project parameter, so whichever of those you resolve a project to can usually be
 passed straight through with no further lookup.
 
 ## Step 1 — Parse inputs
@@ -106,7 +111,7 @@ Parse your invocation prompt for:
   present. It does **not** mean ignore an existing ticket reference — see Step 6 for the
   precise scope of what it suppresses.
 - **project**: e.g. "project API Docs" / "in project \"API Docs\"" → `API Docs` (the raw
-  name/ID/slug text, passed straight through later to `mcp__linear-server__save_issue`'s
+  name/ID/slug text, passed straight through later to Linear's issue-create/update tool's
   `project` parameter — no separate resolution/lookup needed on this agent's part).
 - **skip_project** (boolean): e.g. "no project" / "skip project" / "without a project" /
   "don't assign a project" → `skip_project = true`. This means: when (and only when) a
@@ -173,16 +178,20 @@ or an explicit link) even while `skip_ticket` is `true`, Step 5b will still fetc
 (`skip_ticket` only suppresses *creating* a new ticket, not fetching/evaluating an
 existing reference — see Step 6), so Linear will be touched and Preflight must still run.
 
-**Otherwise (the skip condition does not hold):** run Preflight as before. Verify the
-Linear MCP is reachable with a lightweight call, e.g. `mcp__linear-server__get_user`
-with `query: "me"`. If it fails or is unavailable, report clearly that the user needs to
-add the Linear MCP server, mentioning the fix:
+**Otherwise (the skip condition does not hold):** run Preflight as before. Verify Linear
+is reachable with a lightweight call — e.g. whatever Linear MCP tool resolves the current
+user (`query: "me"` or equivalent). If no Linear MCP tool is available at all, or the
+call fails, report clearly that the user needs a Linear MCP connection configured. Run
+`claude mcp list` via Bash to check what's already configured before concluding none
+exists. If none is configured, mention that a fresh HTTP-transport connection can be
+added, e.g.:
 ```
-claude mcp add --transport http --scope user linear-server https://mcp.linear.app/mcp
+claude mcp add --transport http --scope user linear https://mcp.linear.app/mcp
 ```
-Optionally attempt to run that command via Bash; if it fails, tell the user to run it
-manually. Either way, stop here — return `{"status": "failed", "reason": "..."}` and do
-not proceed to Step 4.
+(the server name `linear` here is just a suggestion — any name works). Do not attempt to
+run that command yourself; only the user can decide whether and how to add it. Either
+way, stop here — return `{"status": "failed", "reason": "..."}` and do not proceed to
+Step 4.
 
 ## Resolve team/project (shared procedure)
 
@@ -193,18 +202,18 @@ and Step 7a's escape hatch (the rarer path — a bracket WAS present, but the Ju
 its ticket unresolvable, so Step 4 never ran).
 
 1. **Team.** If no team is known (not supplied in Step 1, not resolved via retry
-   precedence), fetch options via `mcp__linear-server__list_teams`. If that call fails or
+   precedence), fetch options via Linear's list-teams tool. If that call fails or
    errors (distinct from succeeding with an empty list), do not guess or fabricate a
    team — stop and return `{"status": "failed", "reason": "..."}`, explaining that Linear
    was reachable but the team list couldn't be fetched. Otherwise stop and return
    `{"status": "needs_input", "missing": "team", "options": [...]}`.
 2. **Project.** Only checked once team is known. If `skip_project` is **not** set AND no
    project is known (not supplied in Step 1, not resolved via retry precedence), fetch
-   options via `mcp__linear-server__list_projects`, scoped to the resolved team via its
-   `team` parameter. If that call fails or errors, do not guess or fabricate a project —
-   stop and return `{"status": "failed", "reason": "..."}`, explaining that Linear was
-   reachable but the project list couldn't be fetched. Otherwise stop and return
-   `{"status": "needs_input", "missing": "project", "options": [...]}`.
+   options via Linear's list-projects tool, scoped to the resolved team (whatever
+   parameter that tool uses to scope by team). If that call fails or errors, do not guess
+   or fabricate a project — stop and return `{"status": "failed", "reason": "..."}`,
+   explaining that Linear was reachable but the project list couldn't be fetched.
+   Otherwise stop and return `{"status": "needs_input", "missing": "project", "options": [...]}`.
 3. Otherwise (team known, and project known or `skip_project` set): resolution is
    complete — return control to the caller and continue past whichever step invoked this
    procedure.
@@ -243,9 +252,10 @@ Step 7b) works from that summary, never from the raw diff.
 
 **(b) Ticket-fetch sub-agent** — only spawn this one if a ticket key is present (from Step 2):
 
-> Fetch Linear issue `{TICKET_KEY}` via `mcp__linear-server__get_issue`. If it resolves,
-> return its title and description. If it does not resolve (deleted, inaccessible, or any
-> other error), do **not** treat that as fatal — just return `{"ticket_found": false}`.
+> Fetch Linear issue `{TICKET_KEY}` via whatever Linear MCP tool resolves an issue by key.
+> If it resolves, return its title and description. If it does not resolve (deleted,
+> inaccessible, or any other error), do **not** treat that as fatal — just return
+> `{"ticket_found": false}`.
 
 ## Step 6 — Judge
 
@@ -311,9 +321,9 @@ flow rather than two.
 
 Otherwise (team known, and project known or `skip_project` set): spawn a sub-agent,
 giving it only Step 5a's compact diff summary (never the raw diff) and asking it to
-draft a title and description from that summary. Then call
-`mcp__linear-server__save_issue` yourself with the drafted title/description, the
-resolved team, `priority: 3` (Medium), `estimate: 1`, `assignee: "me"` (self-assign to
+draft a title and description from that summary. Then call Linear's issue-create/update
+tool yourself with the drafted title/description, the resolved team, `priority: 3`
+(Medium), `estimate: 1`, `assignee: "me"` (self-assign to
 the invoking user by default — always included, unconditionally), the resolved project
 (omit the `project` parameter entirely when `skip_project` was set — never pass an
 empty/null project just to have the key present), and, if given, the parent ticket as
