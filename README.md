@@ -1,6 +1,6 @@
 # claude-plugins
 
-A personal [Claude Code](https://docs.claude.com/claude-code) plugin marketplace: skills, an agent, and hooks for code review, PR management, knowledge management, and general dev productivity.
+A personal [Claude Code](https://docs.claude.com/claude-code) plugin marketplace: skills, an agent, and hooks for code review, commit/ticket hygiene, knowledge management, and general dev productivity.
 
 ## Installing
 

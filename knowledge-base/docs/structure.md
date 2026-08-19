@@ -59,8 +59,8 @@ Each step file should follow this structure (no frontmatter):
 ## Top-level layout
 
 ```
-~/kb/
-├── projects/          # Active KB projects (managed by /new, /list, /execute)
+~/data/kb/
+├── projects/          # Active KB projects (managed by /elaborate, /list, /execute)
 └── completed-projects/  # Optional: archive directory for fully finished projects
 ```
 

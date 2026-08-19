@@ -21,7 +21,7 @@
     {
       "name": "utilities",
       "source": "./utilities",
-      "description": "Developer utilities: merge a single PR, merge all open PRs, open Terminal, run code-review in a loop, and reconcile commit messages with Linear tickets"
+      "description": "Developer utilities: open Terminal, run code-review in a loop, remove merged branches, and reconcile commit messages with Linear tickets"
     }
   ]
 }
