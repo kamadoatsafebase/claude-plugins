@@ -5,9 +5,11 @@ description: |
   valid Linear ticket, fixing either as needed — regenerating the message and/or filing
   a new ticket. Fully self-sufficient: re-derives the commit SHA, message, and diff itself
   rather than requiring them to be passed in. Only ever asks its caller (never the user
-  directly) for things it can't infer — a Linear team and/or a Linear project — and only
-  when ticket creation turns out to be necessary and one wasn't supplied (or explicitly
-  waived).
+  directly) for things the user did not explicitly state — a Linear team and/or a Linear
+  project — and only when ticket creation turns out to be necessary and one wasn't
+  supplied (or explicitly waived). Callers must never guess or infer a team/project from
+  context on the user's behalf and pass it in as if supplied; if the user didn't say it,
+  leave it out and let this agent ask.
 
   Invoke as: Agent(subagent_type='utilities:commit-and-ticket'). Primarily invoked by the
   `/commit-and-ticket` skill, but safe to invoke directly whenever HEAD's commit message
@@ -99,7 +101,13 @@ Your invocation prompt is the **raw, unparsed** natural-language args your calle
 received (typically forwarded verbatim from the user by the `/commit-and-ticket` skill,
 with zero interpretation on the skill's part) — parsing them is your responsibility.
 Parse your invocation prompt for:
-- **team**: e.g. "team ENG" → `ENG`
+- **team**: e.g. "team ENG" → `ENG`. Only treat a team as "supplied" if the user
+  themselves explicitly stated it (directly, or forwarded verbatim through the
+  `/commit-and-ticket` skill, or given back as an explicitly-labeled resolved value per
+  the retry-precedence rule below). If you — the calling assistant — inferred or guessed
+  this team from context (repo name, other tickets, "the only team that exists," etc.)
+  rather than the user stating it, do not put it in this invocation prompt; omit it and
+  let this agent ask via `needs_input` instead.
 - **parent ticket**: e.g. "parent is ENG-900" → `ENG-900`
 - **explicit ticket link**: e.g. "link to ENG-500" / "use ENG-500" → `ENG-500`. This is a
   lightweight natural-language equivalent of what would otherwise be a `--link-ticket`
@@ -202,11 +210,14 @@ and Step 7a's escape hatch (the rarer path — a bracket WAS present, but the Ju
 its ticket unresolvable, so Step 4 never ran).
 
 1. **Team.** If no team is known (not supplied in Step 1, not resolved via retry
-   precedence), fetch options via Linear's list-teams tool. If that call fails or
-   errors (distinct from succeeding with an empty list), do not guess or fabricate a
-   team — stop and return `{"status": "failed", "reason": "..."}`, explaining that Linear
-   was reachable but the team list couldn't be fetched. Otherwise stop and return
-   `{"status": "needs_input", "missing": "team", "options": [...]}`.
+   precedence), fetch options via Linear's list-teams tool. Never treat a successful
+   result — including a list containing exactly one team — as a resolution on its own:
+   even a single available team must still be confirmed by the user via `needs_input`,
+   not auto-selected. If that call fails or errors (distinct from succeeding with an
+   empty list), do not guess or fabricate a team — stop and return
+   `{"status": "failed", "reason": "..."}`, explaining that Linear was reachable but the
+   team list couldn't be fetched. Otherwise (including a single-team result) stop and
+   return `{"status": "needs_input", "missing": "team", "options": [...]}`.
 2. **Project.** Only checked once team is known. If `skip_project` is **not** set AND no
    project is known (not supplied in Step 1, not resolved via retry precedence), fetch
    options via Linear's list-projects tool, scoped to the resolved team (whatever
