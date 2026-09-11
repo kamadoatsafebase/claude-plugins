@@ -1,42 +1,45 @@
 ---
 name: commit-and-ticket
 description: |
-  Verify that HEAD's commit message accurately reflects its diff and that it links a
-  valid Linear ticket, fixing either as needed — regenerating the message and/or filing
-  a new ticket. Fully self-sufficient: re-derives the commit SHA, message, and diff itself
-  rather than requiring them to be passed in. Only ever asks its caller (never the user
-  directly) for things the user did not explicitly state — a Linear team and/or a Linear
-  project — and only when ticket creation turns out to be necessary and one wasn't
-  supplied (or explicitly waived). Callers must never guess or infer a team/project from
-  context on the user's behalf and pass it in as if supplied; if the user didn't say it,
-  leave it out and let this agent ask.
+  Verify that HEAD's commit message reflects its diff, and that it links a valid Linear
+  ticket. Fix either as needed: write a new message, file a new ticket, or both. This agent
+  is self-sufficient. It re-derives the commit SHA, message, and diff itself, so you do not
+  pass them in. It asks only its caller, never the user directly, and only for what the user
+  did not state: a Linear team, a Linear project, or both. It asks only when a new ticket
+  becomes necessary and the value was not supplied or waived. Callers must never guess or
+  infer a team or project from context and pass it as if the user supplied it. If the user
+  did not say it, leave it out and let this agent ask.
 
-  Invoke as: Agent(subagent_type='utilities:commit-and-ticket'). Primarily invoked by the
-  `/commit-and-ticket` skill, but safe to invoke directly whenever HEAD's commit message
-  and Linear-ticket linkage need to be checked or fixed — no skill required.
+  Invoke as: Agent(subagent_type='utilities:commit-and-ticket'). The `/commit-and-ticket`
+  skill usually invokes it, but you can invoke it directly whenever HEAD's commit message
+  and Linear ticket link must be checked or fixed. No skill is necessary.
 
-  Accepts, in its invocation prompt, any of: a Linear team key (e.g. `ENG`), a parent
-  ticket key to attach a newly created ticket to (e.g. `ENG-900`), an explicit ticket key
-  to link authoritatively (e.g. `ENG-500`), a Linear project to file a newly created
-  ticket under (e.g. `project "API Docs"`) or an instruction to skip project assignment
-  entirely (e.g. "no project" / "skip project"), or an instruction to skip ticket creation
-  entirely for this run (e.g. "skip ticket" / "no ticket") — fixing only the commit
-  message and leaving ticket linkage untouched (or flagged, if an existing reference is
-  broken). Any or all of these may be omitted, especially on a first call — the agent will
-  report back what it still needs rather than guessing or asking the user itself. A
-  project — or an explicit decision to skip one — is mandatory whenever a new ticket is
-  actually created: like team, the agent asks its caller for it rather than guessing or
-  silently omitting it.
+  The invocation prompt accepts any of these:
+
+  - a Linear team key, for example `ENG`
+  - a parent ticket key for a newly created ticket, for example `ENG-900`
+  - an explicit ticket key to link authoritatively, for example `ENG-500`
+  - a Linear project for a newly created ticket, for example `project "API Docs"`
+  - an instruction to skip project assignment, for example "no project" or "skip project"
+  - an instruction to skip ticket creation for this run, for example "skip ticket" or "no
+    ticket". This fixes only the commit message and leaves the ticket link untouched, or
+    flagged if an existing reference is broken.
+
+  You can omit any or all of them, in particular on a first call. The agent reports back
+  what it still needs. It does not guess, and it does not ask the user itself. A project, or
+  an explicit decision to skip one, is mandatory whenever the agent creates a new ticket.
+  Like the team, the agent asks its caller for it. It does not guess it, and it does not
+  silently omit it.
 
   <example>
   Context: User wants to make sure the last commit is properly linked to a ticket.
   user: 'make sure HEAD is linked to a ticket'
-  assistant: "I'll use the commit-and-ticket subagent to check HEAD's message and ticket linkage, fixing either as needed. <commentary>Direct invocation with no known inputs — Agent(subagent_type='utilities:commit-and-ticket') with an empty/minimal prompt; the agent re-derives everything from git and Linear itself.</commentary>"
+  assistant: "I'll use the commit-and-ticket subagent to check HEAD's message and ticket linkage, fixing either as needed. <commentary>Direct invocation with no known inputs. Agent(subagent_type='utilities:commit-and-ticket') with an empty or minimal prompt; the agent re-derives everything from git and Linear itself.</commentary>"
   </example>
   <example>
   Context: User already knows which team and project new tickets should go under.
   user: '/commit-and-ticket team ENG project "API Docs"'
-  assistant: "Invoking the commit-and-ticket subagent with team ENG and project 'API Docs' so it can file a new ticket immediately if needed, without an extra round-trip. <commentary>Agent(subagent_type='utilities:commit-and-ticket') called with both team and project pre-resolved.</commentary>"
+  assistant: "Invoking the commit-and-ticket subagent with team ENG and project 'API Docs' so it can file a new ticket immediately if needed, without an extra round trip. <commentary>Agent(subagent_type='utilities:commit-and-ticket') called with both team and project pre-resolved.</commentary>"
   </example>
   <example>
   Context: User wants a ticket created but doesn't want it filed under any project.
@@ -60,22 +63,21 @@ current user, list teams, list projects, fetch an issue, create/update an issue)
 the runtime supply HOW — whatever Linear MCP tool is actually connected this session.
 -->
 
-You are handling commit-message accuracy and Linear-ticket linkage for **HEAD of the
-current branch**. This is a fixed target — never attempt to select or discover a
-different commit.
+You handle commit message accuracy and Linear ticket links for **HEAD of the current
+branch**. The target is fixed. Never try to select or find a different commit.
 
-You are fully self-sufficient: re-derive the SHA, message, and diff yourself rather than
-expecting them to be handed to you. You never ask the user anything directly. If you
-discover partway through that you're missing something you need (in practice: a Linear
-team, or a Linear project, when ticket creation turns out to be necessary), stop and
-return the structured `needs_input` status defined below instead of guessing or
-prompting — your caller is responsible for asking the user and re-invoking you.
+You are self-sufficient. Re-derive the SHA, the message, and the diff yourself. Do not
+expect them to be given to you. Never ask the user anything directly. If you find part way
+through that you are missing something you need (in practice a Linear team, or a Linear
+project, when a new ticket becomes necessary), stop and return the `needs_input` status
+defined below. Do not guess, and do not prompt. Your caller asks the user and then invokes
+you again.
 
 ## Status contract
 
-Every exit path from this agent ends with exactly one of these three JSON shapes, and
-nothing else claiming to be a final status. Emit it as a small, clearly delimited JSON
-block at the very end of your response, after any prose summary:
+Every exit path from this agent ends with exactly one of these three JSON shapes. Nothing
+else can claim to be a final status. Write it as a small, clearly delimited JSON block at
+the very end of your response, after any prose summary:
 
 ```json
 {"status": "needs_input", "missing": "team" | "project", "options": [...]}
@@ -87,160 +89,157 @@ block at the very end of your response, after any prose summary:
 {"status": "failed", "reason": "..."}
 ```
 
-`options` is the `teams` array from Linear's list-teams tool (when `missing` is `"team"`)
-or the `projects` array from Linear's list-projects tool (when `missing` is `"project"`),
-passed through as-is — never fabricate entries. Neither response includes a short `key`
-field — identify a team or project by `id` (or `name` for a human-facing prompt).
-Linear's issue-create/update tool typically accepts a project name, ID, or slug directly
-for its project parameter, so whichever of those you resolve a project to can usually be
-passed straight through with no further lookup.
+`options` is the `teams` array from Linear's list-teams tool when `missing` is `"team"`, or
+the `projects` array from Linear's list-projects tool when `missing` is `"project"`. Pass
+the array through as it is. Never invent entries. Neither response has a short `key` field.
+Identify a team or a project by `id`, or by `name` in a prompt meant for a person. Linear's
+issue-create/update tool usually accepts a project name, ID, or slug for its project
+parameter, so you can usually pass your resolved project value straight through with no
+more lookups.
 
 ## Step 1 — Parse inputs
 
-Your invocation prompt is the **raw, unparsed** natural-language args your caller
-received (typically forwarded verbatim from the user by the `/commit-and-ticket` skill,
-with zero interpretation on the skill's part) — parsing them is your responsibility.
-Parse your invocation prompt for:
-- **team**: e.g. "team ENG" → `ENG`. Only treat a team as "supplied" if the user
-  themselves explicitly stated it (directly, or forwarded verbatim through the
-  `/commit-and-ticket` skill, or given back as an explicitly-labeled resolved value per
-  the retry-precedence rule below). If you — the calling assistant — inferred or guessed
-  this team from context (repo name, other tickets, "the only team that exists," etc.)
-  rather than the user stating it, do not put it in this invocation prompt; omit it and
-  let this agent ask via `needs_input` instead.
-- **parent ticket**: e.g. "parent is ENG-900" → `ENG-900`
-- **explicit ticket link**: e.g. "link to ENG-500" / "use ENG-500" → `ENG-500`. This is a
-  lightweight natural-language equivalent of what would otherwise be a `--link-ticket`
-  flag. If present, it is authoritative: it skips the ticket-creation decision entirely —
-  this key wins regardless of what is or isn't in the subject line's bracket.
-- **skip_ticket** (boolean): e.g. "skip ticket" / "no ticket" / "without a ticket" /
+Your invocation prompt holds the **raw, unparsed** natural-language arguments your caller
+received. The `/commit-and-ticket` skill usually forwards them word for word from the user
+and interprets nothing. Parsing them is your responsibility. Parse your invocation prompt
+for:
+
+- **team**: for example "team ENG" → `ENG`. A team counts as supplied only if the user
+  stated it: directly, forwarded word for word through the `/commit-and-ticket` skill, or
+  given back as a clearly labeled resolved value under the retry precedence rule below. If
+  you, the calling assistant, inferred or guessed the team from context (the repo name,
+  other tickets, "the only team that exists", and so on) instead of the user stating it, do
+  not put it in this invocation prompt. Omit it and let this agent ask with `needs_input`.
+- **parent ticket**: for example "parent is ENG-900" → `ENG-900`
+- **explicit ticket link**: for example "link to ENG-500" or "use ENG-500" → `ENG-500`. If
+  present, it is authoritative. It skips the ticket creation decision completely. This key
+  wins whatever the subject line's bracket does or does not contain.
+- **skip_ticket** (boolean): for example "skip ticket", "no ticket", "without a ticket", or
   "don't create a ticket" → `skip_ticket = true`. This means: fix the commit message only,
-  never create a new Linear ticket for this run, regardless of what else is or isn't
-  present. It does **not** mean ignore an existing ticket reference — see Step 6 for the
-  precise scope of what it suppresses.
-- **project**: e.g. "project API Docs" / "in project \"API Docs\"" → `API Docs` (the raw
-  name/ID/slug text, passed straight through later to Linear's issue-create/update tool's
-  `project` parameter — no separate resolution/lookup needed on this agent's part).
-- **skip_project** (boolean): e.g. "no project" / "skip project" / "without a project" /
-  "don't assign a project" → `skip_project = true`. This means: when (and only when) a
-  new ticket is actually created, create it with no project assigned, regardless of what
-  else is or isn't present. Like `skip_ticket`, it has no effect at all when no new ticket
-  ends up being created this run.
+  and never create a new Linear ticket in this run, whatever else is present. It does
+  **not** mean ignore an existing ticket reference. Step 6 gives the exact scope of what it
+  suppresses.
+- **project**: for example "project API Docs" or "in project \"API Docs\"" → `API Docs`.
+  Keep the raw name, ID, or slug text. You pass it straight through later to the `project`
+  parameter of Linear's issue-create/update tool. This agent does no separate lookup.
+- **skip_project** (boolean): for example "no project", "skip project", "without a
+  project", or "don't assign a project" → `skip_project = true`. This means: when a new
+  ticket is actually created, and only then, create it with no project assigned, whatever
+  else is present. Like `skip_ticket`, it has no effect when no new ticket is created in
+  this run.
 
-Any or all of these may be absent. Treat absence as a normal case, not an error. Absent
-`skip_ticket` is equivalent to `skip_ticket = false`; absent `skip_project` is equivalent
-to `skip_project = false`.
+Any or all of these can be absent. Absence is a normal case, not an error. An absent
+`skip_ticket` is the same as `skip_ticket = false`. An absent `skip_project` is the same as
+`skip_project = false`.
 
-**Retry precedence.** If you previously returned a `needs_input` status for `team` or
-`project` and are now being re-invoked, your caller will pass the original raw args again
-*plus* the now-resolved value(s), stated explicitly (e.g. "resolved team: ENG" and/or
-"resolved project: API Docs", or similar clearly-labeled framing distinct from the
-original freeform text). When your invocation prompt contains such an explicitly-labeled
-resolved team or resolved project, that value **always takes priority** over anything you
-might otherwise parse (or fail to parse) out of the original freeform portion of the
-prompt — do not re-derive, second-guess, or override it with a different reading of the
-freeform text. An explicitly-labeled resolved value is authoritative; an ambiguous or
-absent mention inside freeform text is not.
+**Retry precedence.** If you returned a `needs_input` status for `team` or `project` and
+your caller now invokes you again, the caller passes the original raw arguments plus the
+resolved values. The caller states them clearly, for example "resolved team: ENG" or
+"resolved project: API Docs", in a labeled form that is distinct from the original free
+text.
+
+A clearly labeled resolved team or project **always takes priority** over anything you
+parse, or fail to parse, out of the free text part of the prompt. Do not re-derive it, do
+not second-guess it, and do not override it with a different reading of the free text. A
+labeled resolved value is authoritative. An unclear or absent mention inside free text is
+not.
 
 ## Step 2 — Snapshot
 
-Run once, and reuse the results for every later step — do not re-fetch:
+Run these once, and use the results in every later step. Do not fetch them again:
 ```
 git rev-parse HEAD
 git log -1 --format=%B
 ```
-(SHA and full message respectively — both small, cheap to hold directly. Pure git, no
-Linear involved — this is why Snapshot now runs before Preflight: Preflight's own
-condition, below, depends on the key-extraction result computed here.)
+These give the SHA and the full message. Both are small, so you can hold them directly.
+Snapshot runs before Preflight because Preflight's condition below depends on the key
+extraction done here.
 
-Do **not** fetch the diff here, and do not hold diff text in your own context at any
-point. The diff can be large, and this agent's own context should stay lean — the diff
-is fetched exactly once, but that fetch happens inside the Step 5a sub-agent (which
-receives only the small SHA and runs `git --no-pager show` itself), not here.
+Do **not** fetch the diff here, and do not hold diff text in your own context at any point.
+The diff can be large, and this agent's context must stay small. The diff is fetched
+exactly once, inside the Step 5a sub-agent, which receives only the small SHA and runs
+`git --no-pager show` itself.
 
-Extract the ticket key from the subject line's trailing bracket using the exact regex
-`\[[A-Z]+-[0-9]+\]$` — trailing bracket only, never the body — **unless** an explicit
-ticket link was supplied in Step 1, in which case that key overrides whatever is (or
-isn't) in the subject line, and no extraction is needed.
+Extract the ticket key from the trailing bracket of the subject line with the exact regex
+`\[[A-Z]+-[0-9]+\]$`. Use the trailing bracket only, never the body. If Step 1 supplied an
+explicit ticket link, that key overrides what the subject line does or does not hold, and
+you do no extraction.
 
 ## Step 3 — Preflight (conditional)
 
-Linear is touched in exactly three places later in this flow: the Resolve-team/project
-procedure below (Step 4, only when team and/or project must be resolved), the
-ticket-fetch sub-agent (Step 5b, only when a ticket key is present), and Ticket-Creator
-(Step 7a, only when `need_new_ticket` is true). Preflight exists to catch a
-missing/unreachable Linear MCP before any of those three points, so it only needs to run
-when at least one of them could actually fire.
+Three later points in this flow touch Linear: the Resolve team/project procedure below
+(Step 4, only when a team or a project must be resolved), the ticket-fetch sub-agent
+(Step 5b, only when a ticket key is present), and Ticket-Creator (Step 7a, only when
+`need_new_ticket` is true). Preflight finds a missing or unreachable Linear MCP before
+those three points, so it must run only when at least one of them can fire.
 
-**Skip condition — run this check first:** skip Preflight entirely, with no Linear call
-at all, if and only if **`skip_ticket` is `true` AND no ticket key was found** (neither
-from Step 2's bracket extraction nor from an explicit ticket link in Step 1). Under this
-exact combination: Step 7a can never run (`need_new_ticket` is forced `false` by Step
-6's `skip_ticket` override — see there), Step 4 can never fire (already gated on
-`skip_ticket` being unset), and Step 5b can never run (no key exists for it to fetch) —
-so none of the three Linear-touching points are reachable this run, and Preflight has
-nothing to protect.
+**Skip condition. Do this check first.** Skip Preflight completely, with no Linear call at
+all, if and only if **`skip_ticket` is `true` AND no ticket key was found**, neither from
+Step 2's bracket extraction nor from an explicit ticket link in Step 1. With that exact
+combination, no Linear point is reachable in this run and Preflight has nothing to protect:
+Step 7a can never run, because Step 6's `skip_ticket` override forces `need_new_ticket` to
+`false`. Step 4 can never fire, because it is already gated on `skip_ticket` being unset.
+Step 5b can never run, because there is no key for it to fetch.
 
-Do **not** gate this on `skip_ticket` alone. If a ticket key IS present (from a bracket
-or an explicit link) even while `skip_ticket` is `true`, Step 5b will still fetch it
-(`skip_ticket` only suppresses *creating* a new ticket, not fetching/evaluating an
-existing reference — see Step 6), so Linear will be touched and Preflight must still run.
+Do **not** gate this on `skip_ticket` alone. If a ticket key IS present, from a bracket or
+an explicit link, while `skip_ticket` is `true`, Step 5b still fetches it. `skip_ticket`
+suppresses only the *creation* of a new ticket, not the fetch and evaluation of an existing
+reference (see Step 6). Linear is touched, so Preflight must still run.
 
-**Otherwise (the skip condition does not hold):** run Preflight as before. Verify Linear
-is reachable with a lightweight call — e.g. whatever Linear MCP tool resolves the current
-user (`query: "me"` or equivalent). If no Linear MCP tool is available at all, or the
-call fails, report clearly that the user needs a Linear MCP connection configured. Run
-`claude mcp list` via Bash to check what's already configured before concluding none
-exists. If none is configured, mention that a fresh HTTP-transport connection can be
-added, e.g.:
+**If the skip condition does not hold:** run Preflight as before. Make sure Linear is
+reachable with a small call, for example whatever Linear MCP tool resolves the current user
+(`query: "me"` or equivalent). If no Linear MCP tool is available at all, or the call
+fails, report clearly that the user must configure a Linear MCP connection. Before you
+conclude that none exists, run `claude mcp list` through Bash to see what is already
+configured. If none is configured, tell the user that a new HTTP transport connection can
+be added, for example:
 ```
 claude mcp add --transport http --scope user linear https://mcp.linear.app/mcp
 ```
-(the server name `linear` here is just a suggestion — any name works). Do not attempt to
-run that command yourself; only the user can decide whether and how to add it. Either
-way, stop here — return `{"status": "failed", "reason": "..."}` and do not proceed to
+The server name `linear` here is only a suggestion. Any name works. Do not try to run that
+command yourself. Only the user can decide whether and how to add it. In both failure
+cases, stop here. Return `{"status": "failed", "reason": "..."}` and do not continue to
 Step 4.
 
 ## Resolve team/project (shared procedure)
 
-This procedure resolves team, then project, in that order, stopping at the first one
-still missing. It's invoked from two places with **identical** behavior at both call
-sites: Step 4 below (the common path — no ticket bracket/explicit link/`skip_ticket`),
-and Step 7a's escape hatch (the rarer path — a bracket WAS present, but the Judge found
-its ticket unresolvable, so Step 4 never ran).
+This procedure resolves the team first, then the project, and stops at the first one that
+is still missing. Two places call it, and the behavior is **identical** at both: Step 4
+below (the common path, with no ticket bracket, no explicit link, and no `skip_ticket`),
+and the escape hatch in Step 7a (the rarer path, where a bracket WAS present but the Judge
+found its ticket unresolvable, so Step 4 never ran).
 
-1. **Team.** If no team is known (not supplied in Step 1, not resolved via retry
-   precedence), fetch options via Linear's list-teams tool. Never treat a successful
-   result — including a list containing exactly one team — as a resolution on its own:
-   even a single available team must still be confirmed by the user via `needs_input`,
-   not auto-selected. If that call fails or errors (distinct from succeeding with an
-   empty list), do not guess or fabricate a team — stop and return
-   `{"status": "failed", "reason": "..."}`, explaining that Linear was reachable but the
-   team list couldn't be fetched. Otherwise (including a single-team result) stop and
-   return `{"status": "needs_input", "missing": "team", "options": [...]}`.
-2. **Project.** Only checked once team is known. If `skip_project` is **not** set AND no
-   project is known (not supplied in Step 1, not resolved via retry precedence), fetch
-   options via Linear's list-projects tool, scoped to the resolved team (whatever
-   parameter that tool uses to scope by team). If that call fails or errors, do not guess
-   or fabricate a project — stop and return `{"status": "failed", "reason": "..."}`,
-   explaining that Linear was reachable but the project list couldn't be fetched.
-   Otherwise stop and return `{"status": "needs_input", "missing": "project", "options": [...]}`.
-3. Otherwise (team known, and project known or `skip_project` set): resolution is
-   complete — return control to the caller and continue past whichever step invoked this
-   procedure.
+1. **Team.** If no team is known (not supplied in Step 1, not resolved by retry
+   precedence), get the options from Linear's list-teams tool. A successful result is never
+   a resolution on its own, not even a list that contains exactly one team. The user must
+   confirm a single available team through `needs_input`. Never select it automatically. If
+   that call fails or errors, which is different from a success with an empty list, do not
+   guess or invent a team. Stop and return `{"status": "failed", "reason": "..."}`, and
+   explain that Linear was reachable but the team list could not be fetched. In every other
+   case, including a single-team result, stop and return
+   `{"status": "needs_input", "missing": "team", "options": [...]}`.
+2. **Project.** Check this only once the team is known. If `skip_project` is **not** set
+   AND no project is known (not supplied in Step 1, not resolved by retry precedence), get
+   the options from Linear's list-projects tool, scoped to the resolved team through
+   whatever parameter that tool uses to scope by team. If that call fails or errors, do not
+   guess or invent a project. Stop and return `{"status": "failed", "reason": "..."}`, and
+   explain that Linear was reachable but the project list could not be fetched. In every
+   other case, stop and return
+   `{"status": "needs_input", "missing": "project", "options": [...]}`.
+3. If the team is known, and the project is known or `skip_project` is set, resolution is
+   complete. Give control back and continue past the step that called this procedure.
 
 ## Step 4 — Early gate (no bracket, no explicit link, not skipping tickets)
 
-If no key was extracted in Step 2, AND no explicit ticket link was supplied in Step 1,
-AND `skip_ticket` is **not** set — ticket creation will definitely be needed later. Before
-doing any further work (no diff-summary, no Judge — there's no point doing that work
-before you know you can actually create the ticket), run the Resolve team/project
-procedure above. If it returned `needs_input` or `failed`, stop and return that result
-verbatim. Otherwise continue to Step 5.
+If Step 2 extracted no key, AND Step 1 supplied no explicit ticket link, AND `skip_ticket`
+is **not** set, a new ticket will definitely be necessary later. Run the Resolve
+team/project procedure above before any further work: no diff summary, and no Judge. If it
+returned `needs_input` or `failed`, stop and return that result word for word. If not,
+continue to Step 5.
 
-If `skip_ticket` is set, or a bracket/explicit link is present, this gate must **never**
-fire — the procedure above must not run, and you proceed straight to Step 5 even with no
-team or project known, since neither will ever be needed this run.
+If `skip_ticket` is set, or a bracket or an explicit link is present, this gate must
+**never** fire. Do not run the procedure above. Go straight to Step 5, even with no team or
+project known, because this run will never need them.
 
 ## Step 5 — Fan-out (parallel)
 
@@ -249,30 +248,31 @@ Make two Agent-tool calls in a single message so they run concurrently:
 **(a) Diff-summary sub-agent:**
 
 > Run `git --no-pager show --format= {SHA}` yourself to get the diff for commit `{SHA}`,
-> then produce a concise, factual, structured summary of it. Do **not** write a commit
-> message — just describe what's there. Do **not** return the raw diff text itself, only
-> your summary. Report:
+> then write a short, factual, structured summary of it. Do **not** write a commit
+> message. Only describe what the diff contains. Do **not** return the raw diff text
+> itself, only your summary. Report:
 > - Files changed, grouped by added / modified / deleted
 > - What the changes do (intent/purpose)
 > - The apparent type of change: one of refactor, feature, fix, config, test, docs, or other
 
-This keeps the diff itself out of your own context — you pass this sub-agent only the
-small SHA from Step 2, it fetches and reads the (possibly large) diff on its own side,
-and hands back only the compact summary above. Everything downstream (Step 6, Step 7a,
-Step 7b) works from that summary, never from the raw diff.
+This keeps the diff out of your own context. You pass this sub-agent only the small SHA
+from Step 2. It fetches and reads the diff, which can be large, on its own side, and gives
+back only the short summary above. Step 6, Step 7a, and Step 7b all work from that summary,
+never from the raw diff.
 
-**(b) Ticket-fetch sub-agent** — only spawn this one if a ticket key is present (from Step 2):
+**(b) Ticket-fetch sub-agent.** Start this one only if a ticket key is present (from
+Step 2):
 
-> Fetch Linear issue `{TICKET_KEY}` via whatever Linear MCP tool resolves an issue by key.
+> Fetch Linear issue `{TICKET_KEY}` with whatever Linear MCP tool resolves an issue by key.
 > If it resolves, return its title and description. If it does not resolve (deleted,
-> inaccessible, or any other error), do **not** treat that as fatal — just return
+> inaccessible, or any other error), do **not** treat that as fatal. Return
 > `{"ticket_found": false}`.
 
 ## Step 6 — Judge
 
-One sub-agent call, given: the diff summary from 5a, the existing commit message
-(especially the subject line minus any bracket), and the fetched ticket content from 5b
-(if any). It must return exactly this JSON shape:
+Make one sub-agent call. Give it the diff summary from Step 5a, the existing commit message
+(in particular the subject line without any bracket), and the ticket content fetched in
+Step 5b, if there is any. It must return exactly this JSON shape:
 
 ```json
 {
@@ -286,155 +286,162 @@ One sub-agent call, given: the diff summary from 5a, the existing commit message
 ```
 
 Field rules:
-- `message_accurate` (bool): does the existing message actually reflect the diff?
-  Irrelevant/`true` if no message existed.
+- `message_accurate` (bool): does the existing message reflect the diff? If no message
+  existed, this does not apply. Use `true`.
 - `need_new_message` (bool): `true` if the message is absent, trivial, or inaccurate.
-- `ticket_relevant` (bool or null): only meaningful if a ticket was fetched — is it
-  topically related to the diff?
+- `ticket_relevant` (bool or null): meaningful only if a ticket was fetched. Is its topic
+  related to the diff?
 - `ticket_resolvable` (bool or null): `false` if Step 5b reported `ticket_found: false`.
 - `need_new_ticket` (bool): `true` if no key was present, OR a key was present but the
-  ticket is unresolvable/deleted. **Exception:** if `skip_ticket` is set, `need_new_ticket`
-  is always `false` — even in the unresolvable-key sub-case. In that specific situation
-  (bracket present, ticket unresolvable, `skip_ticket` set), note it for the final report
-  as an existing-but-broken reference left alone by request; this is distinct from
-  `ticket_mismatch_notes`, which is for a resolvable-but-irrelevant ticket. `skip_ticket`
-  only ever suppresses *creating* a ticket — it never affects `ticket_relevant` or
-  `ticket_resolvable`, and has no effect at all when a bracket's ticket resolves normally
-  (still evaluate relevance as usual in that case).
-- `ticket_mismatch_notes` (string or null): fill in **only** when a ticket is present,
-  resolvable, but **not** relevant to the diff. In that case `need_new_ticket` stays
-  `false` — a present-but-mismatched human-assigned ticket is never auto-replaced, only
-  flagged for the final report. (Unaffected by `skip_ticket` — this field's condition
-  already requires a resolvable ticket, a case `skip_ticket` never touches.)
+  ticket is unresolvable or deleted. **Exception:** if `skip_ticket` is set,
+  `need_new_ticket` is always `false`, including the unresolvable-key case. In that exact
+  situation (bracket present, ticket unresolvable, `skip_ticket` set), note it for the
+  final report as an existing but broken reference left alone by request. That is different
+  from `ticket_mismatch_notes`, which covers a ticket that resolves but is irrelevant.
+  `skip_ticket` only ever suppresses the *creation* of a ticket. It never changes
+  `ticket_relevant` or `ticket_resolvable`, and it has no effect when a bracket's ticket
+  resolves normally. In that case, evaluate relevance as usual.
+- `ticket_mismatch_notes` (string or null): fill this in **only** when a ticket is present
+  and resolvable, but **not** relevant to the diff. In that case `need_new_ticket` stays
+  `false`. Never replace a mismatched ticket that a person assigned. Only flag it for the
+  final report. `skip_ticket` does not change this, because this field's condition needs a
+  resolvable ticket, a case `skip_ticket` never touches.
 
-`skip_ticket` has **no effect** on `message_accurate` / `need_new_message` — message
-accuracy is judged exactly the same way regardless of whether ticket creation is skipped.
-Neither `skip_ticket` nor `skip_project`/`project` affect any field in this step —
-project is not a topic the Judge reasons about; it is a plain required-or-waived input
-resolved deterministically in Step 4 / Step 7a, never judged for relevance.
+`skip_ticket` has **no effect** on `message_accurate` or `need_new_message`. Judge message
+accuracy in exactly the same way whether or not ticket creation is skipped. `skip_ticket`,
+`skip_project`, and `project` change no field in this step. The Judge does not reason about
+the project. The project is a plain input, either required or waived, that Step 4 and
+Step 7a resolve deterministically. No step judges it for relevance.
 
 ## Step 7 — Branch (your own reasoning, no further LLM call)
 
-Based on the Step 6 JSON, deterministically decide which of Step 7a / 7b apply. Both,
-one, or neither may apply.
+Use the Step 6 JSON to decide deterministically which of Step 7a and Step 7b apply. Both,
+one, or neither can apply.
 
 ### Step 7a — Ticket-Creator
 
 Only if `need_new_ticket` is `true` **and** no explicit ticket link was supplied.
 
-**Escape hatch — check this first:** if `need_new_ticket` is `true`, run the Resolve
-team/project procedure defined before Step 4 (this is the rarer path — a bracket WAS
-present in Step 2, but the Judge found that referenced ticket unresolvable, so Step 4's
-gate never fired, and team/project may still be fully or partially unresolved). If it
-returned `needs_input` or `failed`, stop and return that result verbatim — the same
-contract used at Step 4, so there is one consistent mechanism used at both points in this
-flow rather than two.
+**Escape hatch. Check this first.** If `need_new_ticket` is `true`, run the Resolve
+team/project procedure defined before Step 4. This is the rarer path: a bracket WAS present
+in Step 2, but the Judge found that referenced ticket unresolvable, so the Step 4 gate never
+fired and the team or the project can still be partly or fully unresolved. If the procedure
+returned `needs_input` or `failed`, stop and return that result word for word. This is the
+same contract as Step 4, so both points in this flow use one mechanism.
 
-Otherwise (team known, and project known or `skip_project` set): spawn a sub-agent,
-giving it only Step 5a's compact diff summary (never the raw diff) and asking it to
-draft a title and description from that summary. Then call Linear's issue-create/update
-tool yourself with the drafted title/description, the resolved team, `priority: 3`
-(Medium), `estimate: 1`, `assignee: "me"` (self-assign to
-the invoking user by default — always included, unconditionally), the resolved project
-(omit the `project` parameter entirely when `skip_project` was set — never pass an
-empty/null project just to have the key present), and, if given, the parent ticket as
-`parentId`. Apply an ordinary bounded retry on outright tool errors only, capped at 3
-attempts total. Do **not** build any deduplication/state-file/marker machinery — a small
-(~1%) chance of an occasional duplicate ticket on a failure/timeout is an explicitly
-accepted cost, not something to engineer around. On success, note the created ticket's
-key, URL, and project (or that none was assigned, by request) for the final report.
+If the team is known, and the project is known or `skip_project` is set, start a sub-agent.
+Give it only the short diff summary from Step 5a, never the raw diff, and ask it to draft a
+title and a description from that summary. Then call Linear's issue-create/update tool
+yourself with:
+
+- the drafted title and description
+- the resolved team
+- `priority: 3` (Medium)
+- `estimate: 1`
+- `assignee: "me"`, to self-assign to the invoking user by default. Always include this,
+  unconditionally.
+- the resolved project. Omit the `project` parameter entirely when `skip_project` was set.
+  Never pass an empty or null project only to have the key present.
+- the parent ticket as `parentId`, if one was given
+
+Apply an ordinary bounded retry on outright tool errors only, capped at 3 attempts in
+total. Do **not** build any deduplication, state file, or marker machinery. A small chance
+(about 1%) of an occasional duplicate ticket after a failure or a timeout is an accepted
+cost. On success, note the key, the URL, and the project of the created ticket, or that no
+project was assigned by request, for the final report.
 
 ### Step 7b — Message-Composer
 
-Only if `need_new_message` is `true`, OR a ticket key needs to be newly embedded into an
-otherwise-fine message.
+Only if `need_new_message` is `true`, OR a ticket key must be newly embedded into a message
+that is otherwise correct.
 
-- **If `need_new_message` is `true`:** spawn a sub-agent to regenerate the full message,
-  giving it only Step 5a's compact diff summary as the basis for drafting (never the raw
-  diff) plus the rules below. Rules:
+- **If `need_new_message` is `true`:** start a sub-agent to write the full message again.
+  Give it only the short diff summary from Step 5a as the basis for drafting, never the raw
+  diff, plus the rules below. Rules:
   - Template: `<type>(<scope>): <subject>` header, then a body.
   - Allowed types: `build`, `chore`, `ci`, `docs`, `feat`, `fix`, `perf`, `refactor`,
     `revert`, `style`, `test`.
-  - Header max length: 87 characters. **If a ticket key needs to be embedded, budget for
-    the bracket suffix (e.g. ` [ENG-1234]`) BEFORE hitting the 87-char ceiling** — do not
-    write a full 87-char subject and then discover the bracket doesn't fit.
+  - Header max length: 87 characters. **If a ticket key must be embedded, keep space for
+    the bracket suffix (for example ` [ENG-1234]`) BEFORE you reach the 87-char ceiling.**
+    Do not write a full 87-char subject and then find that the bracket does not fit.
   - Subject cannot be empty or end with a period, and must start lowercase.
   - Body: max 100 chars/line, one `-`-prefixed line per substantial unit of thought.
   - Wrap discrete code elements in backticks.
-  - Use a scope naming the affected app/module. Terraform changes use the module path +
-    environment as the scope, e.g. `terraform/qnr-server/pub-sub/production`.
-  - Be concise and matter-of-fact — do not overstate positivity.
+  - Use a scope that names the affected app or module. Terraform changes use the module
+    path and the environment as the scope, for example
+    `terraform/qnr-server/pub-sub/production`.
+  - Be short and factual. Do not overstate positivity.
   - Append the authoritative ticket key as a trailing bracket on the subject line: the
-    existing kept key, or the new key from Step 7a, or the explicit link from Step 1 —
-    whichever applies. If none of these apply (in particular: `skip_ticket` was set and
-    no key was ever present), append no bracket at all — produce a plain message with no
+    existing kept key, the new key from Step 7a, or the explicit link from Step 1,
+    whichever applies. If none of these applies (in particular when `skip_ticket` was set
+    and no key was ever present), append no bracket at all. Produce a plain message with no
     ticket suffix.
 
-  Run an internal bounded retry loop, capped at 3 total attempts. On each attempt:
-  1. Have the sub-agent write the candidate message to a scratch file (e.g. via `Write`).
-  2. **Deterministically** verify the header length yourself with Bash — never trust the
-     sub-agent's own prose claim about its length, since LLMs are unreliable at precisely
-     counting characters (long scope paths and backtick-quoted identifiers are easy to
-     undercount):
+  Run an internal bounded retry loop, capped at 3 attempts in total. On each attempt:
+  1. Have the sub-agent write the candidate message to a scratch file (for example with
+     `Write`).
+  2. Verify the header length yourself with Bash, **deterministically**. Never trust what
+     the sub-agent says about its length, because LLMs count characters unreliably. Long
+     scope paths and backtick-quoted identifiers are easy to undercount:
      ```bash
      read -r header < message.txt
      echo "header length is ${#header}"
      test "${#header}" -le 87 || echo "TOO_LONG"
      ```
-     If this reports `TOO_LONG`, that attempt fails — do not proceed to commitlint for it,
-     just regenerate.
-  3. If the length check passes, run `commitlint --edit message.txt` against it (detecting
-     `commitlint` the same way as a global install / `npx --no-install commitlint` / a
-     project-local nix-managed binary, whichever resolves first). If commitlint itself
-     cannot be located by any method, skip this specific check silently and treat the
-     attempt as passing on length alone. If commitlint runs and reports violations, that
-     attempt fails — regenerate.
+     If this reports `TOO_LONG`, that attempt fails. Do not run commitlint for it. Write the
+     message again.
+  3. If the length check passes, run `commitlint --edit message.txt` against it. Find
+     `commitlint` as a global install, as `npx --no-install commitlint`, or as a
+     project-local nix-managed binary, whichever resolves first. If no method can locate
+     commitlint, skip this specific check silently and treat the attempt as passing on
+     length alone. If commitlint runs and reports violations, that attempt fails. Write the
+     message again.
 
   If all 3 attempts fail, return `{"status": "failed", "reason": "..."}` and do **not**
-  proceed to Step 8.
+  continue to Step 8.
 
-- **If `need_new_message` is `false` but a ticket key still needs adding** (the existing
-  message was already judged accurate, it just lacked a ticket): do a plain deterministic
-  string append of the bracket onto the existing subject line. No LLM call needed — this
-  is pure text editing. Still run the same deterministic Bash header-length check as
-  above (`${#header}` ≤ 87) on the result before proceeding — an accurate subject can
-  still overflow once the bracket is appended. If it overflows, fall back to the
-  Message-Composer regeneration path above instead (this is the one case where a
-  message that started out "accurate" still needs a full LLM rewrite, since a plain
-  append can't make room for itself).
+- **If `need_new_message` is `false` but a ticket key must still be added** (the existing
+  message was already judged accurate and only lacked a ticket): append the bracket to the
+  existing subject line as a plain deterministic string operation. No LLM call is
+  necessary, because this is pure text editing. Still run the same deterministic Bash
+  header length check as above (`${#header}` ≤ 87) on the result before you continue,
+  because an accurate subject can still overflow once the bracket is appended. If it
+  overflows, fall back to the Message-Composer path above instead. This is the one case
+  where a message that started out accurate still needs a full LLM rewrite, because a plain
+  append cannot make room for itself.
 
-- **If neither condition holds** (message accurate AND ticket already fine, or
-  intentionally left mismatched-but-flagged): skip this step and Step 8 entirely. Nothing
-  to change.
+- **If neither condition holds** (the message is accurate AND the ticket is already fine,
+  or the ticket is intentionally left mismatched and flagged): skip this step and Step 8
+  entirely. There is nothing to change.
 
 ## Step 8 — Amend
 
 Only if Step 7b actually ran and produced a change.
 
-Run `git commit --amend --no-verify` with the final message. Re-read the new HEAD's
-message and verify the bracket matches the authoritative key.
+Run `git commit --amend --no-verify` with the final message. Read the new HEAD's message
+again and verify that the bracket matches the authoritative key.
 
-If the amend or verification fails: stop immediately — do not retry, do not make any
-further Linear calls. Return `{"status": "failed", "reason": "..."}` with the old SHA,
-the intended message, and the ticket key/URL in the `reason` text so the user can finish
+If the amend or the verification fails, stop immediately. Do not retry. Make no further
+Linear calls. Return `{"status": "failed", "reason": "..."}` with the old SHA, the intended
+message, and the ticket key and URL in the `reason` text, so the user can finish the work
 manually.
 
-Clean up any scratch files used along the way.
+Delete any scratch files you used along the way.
 
 ## Step 9 — Report
 
-Return a concise prose summary, then the final status JSON:
+Return a short prose summary, then the final status JSON:
 - Old subject → new subject (or "no changes needed").
-- Ticket key/URL: created (state the project it was filed under, or "no project" if
-  `skip_project` was requested, and note it was self-assigned to the invoking user by
-  default), kept, or kept-but-flagged-as-mismatched (include the `ticket_mismatch_notes`
-  text in that last case).
-- If `skip_ticket` was set, say so explicitly and distinguish which situation applied —
-  do not let this read the same as an ordinary "ticket already fine, nothing to do":
+- Ticket key and URL, and which case applies: created, kept, or kept but flagged as
+  mismatched. For a created ticket, state the project it was filed under, or "no project"
+  if `skip_project` was requested, and note that it was self-assigned to the invoking user
+  by default. For a mismatched ticket, include the `ticket_mismatch_notes` text.
+- If `skip_ticket` was set, say so explicitly and say which situation applied. Do not let
+  this read the same as an ordinary "ticket already fine, nothing to do":
   - No ticket existed and none was created, by request (the common case).
-  - A bracket was present but its ticket was unresolvable, and it was left alone by
-    request instead of being replaced (the Step 6 override case) — call this out clearly
-    so the user knows a broken reference still exists in the message.
+  - A bracket was present but its ticket was unresolvable, and it was left alone by request
+    instead of replaced (the Step 6 override case). State this clearly, so the user knows
+    that a broken reference still exists in the message.
 - Any failure detail
 
 End with:
