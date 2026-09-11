@@ -1,11 +1,11 @@
 ---
 name: plain-english
-description: Rewrite text so it reads human, concise, and simple. Runs the humanizer skill, then applies ASD-STE100 Simplified Technical English. Use when the user types /plain-english, or asks to simplify, tighten, de-jargon, or de-AI a piece of prose. Args are optional, and default to the most recent text in the conversation.
+description: Rewrite text so it reads human, concise, and simple. Removes AI writing patterns, then applies ASD-STE100 Simplified Technical English. Use when the user types /plain-english, or asks to simplify, tighten, de-jargon, or de-AI a piece of prose. Args are optional, and default to the most recent text in the conversation.
 ---
 
 # /plain-english
 
-Rewrite text to read human, concise, and simple. Run `humanizer` first, then ASD-STE100.
+Rewrite text to read human, concise, and simple. Remove the AI writing patterns first, then apply ASD-STE100.
 
 Usage: `/plain-english [text | file path | description of the text]`
 
@@ -13,15 +13,15 @@ Usage: `/plain-english [text | file path | description of the text]`
 - A file path: rewrite that file in place.
 - Anything else: treat it as the text itself, or as a hint about which text to rewrite. Use your best judgment. Do not ask for clarification.
 
-> **Prerequisite:** the `humanizer` plugin (`blader/humanizer`). If the `humanizer:humanizer` skill is not available, say so in one line. Then run Steps 2, 4, and 5 only.
+This skill has no external dependency. It carries its own pattern catalogue.
 
 ---
 
-## Step 1 — Run humanizer
+## Step 1 — Remove the AI writing patterns
 
-Pass the resolved text to `humanizer:humanizer` through the Skill tool in embedded mode. Take its final rewrite as your working draft.
+Read `references/ai-patterns.md`, next to this file. It lists 25 patterns, strongest first, with a rewrite process. Apply it to the resolved text, and take the result as your working draft.
 
-That skill owns the AI-pattern catalogue. Do not restate, re-derive, or second-guess its rules here.
+That file owns the pattern catalogue. Do not restate or duplicate its rules here.
 
 Carry its two hard constraints through every later step:
 
