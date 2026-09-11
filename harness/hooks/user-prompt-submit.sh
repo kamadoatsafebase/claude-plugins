@@ -12,6 +12,6 @@ fi
 jq -n '{
   hookSpecificOutput: {
     hookEventName: "UserPromptSubmit",
-    additionalContext: "Follow the Orchestration Mode guidelines."
+    additionalContext: "Follow the Orchestration Mode and Plain English Mode guidelines."
   }
 }'

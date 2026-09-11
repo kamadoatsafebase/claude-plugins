@@ -9,9 +9,9 @@
   },
   "plugins": [
     {
-      "name": "orchestration",
-      "source": "./orchestration",
-      "description": "Always-on orchestration and token-efficiency rules"
+      "name": "harness",
+      "source": "./harness",
+      "description": "Always-on session rules: delegate to subagents, and write all communications in plain English"
     },
     {
       "name": "knowledge-base",

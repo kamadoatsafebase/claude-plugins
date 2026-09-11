@@ -1,0 +1,9 @@
+{
+  "name": "harness",
+  "description": "Always-on session rules: delegate to subagents, and write all communications in plain English",
+  "version": "1.0.0",
+  "author": {
+    "name": "Kevin Amado",
+    "url": "https://github.com/kamadorueda/claude-plugins"
+  }
+}

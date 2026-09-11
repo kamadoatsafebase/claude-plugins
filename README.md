@@ -8,7 +8,7 @@ This repo is a plugin marketplace (`.claude-plugin/marketplace.json`, owner `per
 
 ```
 /plugin marketplace add kamadorueda/claude-plugins
-/plugin install orchestration
+/plugin install harness
 /plugin install knowledge-base
 /plugin install utilities
 ```
@@ -22,18 +22,18 @@ Each top-level directory is a plugin with its own `.claude-plugin/plugin.json`:
 ├── .claude-plugin/plugin.json
 ├── skills/<name>/SKILL.md   # slash-command skills
 ├── agents/<name>.md         # subagent definitions (utilities only)
-├── hooks/                   # hook scripts + hooks.json (orchestration only)
+├── hooks/                   # hook scripts + hooks.json (harness only)
 └── scripts/                 # helper CLIs (knowledge-base only)
 ```
 
 ## Plugins
 
-### orchestration
+### harness
 
-Always-on rules pushing the main session to delegate work to subagents instead of doing it directly.
+Always-on rules shaping how the main session works: delegate to subagents, and write every human-facing text in plain English.
 
-- **SessionStart hook** — prints `session-start.txt` (Orchestration Mode guidelines: break requests into steps, delegate each via the Agent tool, parallelize independent steps, avoid pausing for clarification) at session start.
-- **UserPromptSubmit hook** (`hooks/user-prompt-submit.sh`) — reinjects the Orchestration Mode reminder on each main-session user prompt (skipped for subagents).
+- **SessionStart hook** — prints `session-start.txt` at session start. It carries two sections: *Orchestration Mode* (break requests into steps, delegate each via the Agent tool, parallelize independent steps, avoid pausing for clarification) and *Plain English Mode* (run `utilities:plain-english` over messages, commit messages, PR text, tickets, and docs, applying its rules directly for short replies).
+- **UserPromptSubmit hook** (`hooks/user-prompt-submit.sh`) — reinjects both reminders on each main-session user prompt (skipped for subagents).
 
 ### knowledge-base
 
@@ -57,5 +57,6 @@ Standalone developer-productivity skills, plus one agent.
 ## Notes / gaps
 
 - `knowledge-base/docs/config.md` hardcodes `KB_ROOT=~/data/kb` — edit before using knowledge-base skills on a new setup.
-- No repo-level `CLAUDE.md`; orchestration behavior comes solely from the `orchestration` plugin's hooks.
-- `/plain-english` depends on the external `humanizer` plugin ([blader/humanizer](https://github.com/blader/humanizer)); without it the skill runs the ASD-STE100 pass only.
+- No repo-level `CLAUDE.md`. Orchestration and plain-English behavior come solely from the `harness` plugin's hooks.
+- `/plain-english` depends on the external `humanizer` plugin ([blader/humanizer](https://github.com/blader/humanizer)). Without it the skill runs the ASD-STE100 pass only.
+- The `harness` plugin's Plain English Mode expects the `utilities` plugin to be installed.
