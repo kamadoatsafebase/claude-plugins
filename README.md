@@ -50,6 +50,7 @@ Standalone developer-productivity skills, plus one agent.
 - **/commit-and-ticket** — thin proxy invoking the `utilities:commit-and-ticket` agent to verify HEAD's commit message matches its diff and links a valid Linear ticket, regenerating the message and/or filing a ticket as needed.
 - **commit-and-ticket agent** (`agents/commit-and-ticket.md`) — does the actual work: parses natural-language args (team, project, parent ticket, explicit ticket link, skip-ticket/skip-project), judges message accuracy against the diff, creates or links a Linear ticket (self-assigned, mandatory project or explicit opt-out), regenerates the message under commitlint-compatible rules, and amends HEAD.
 - **/code-review-loop** — runs the built-in `code-review` skill repeatedly, triages findings into fix/skip, applies fixes and amends the commit, up to 5 turns or until clean.
+- **/plain-english `[text|file|description]`** — rewrites text to read human, concise, and simple: runs the `humanizer` skill for AI-writing patterns, then applies the generalizable subset of [ASD-STE100](https://www.asd-ste100.org/) Simplified Technical English (active voice, sentence and paragraph caps, three-word compound nouns, plain-word substitutions), skipping the aerospace-only rules.
 - **/open-terminal `[path|description]`** — opens a path (or cwd, or a path inferred from a description) in a new macOS Terminal window.
 - **/remove-merged-branches** — deletes local git branches with zero unique commits vs. `origin/main`, after listing them and confirming with the user.
 
@@ -57,3 +58,4 @@ Standalone developer-productivity skills, plus one agent.
 
 - `knowledge-base/docs/config.md` hardcodes `KB_ROOT=~/data/kb` — edit before using knowledge-base skills on a new setup.
 - No repo-level `CLAUDE.md`; orchestration behavior comes solely from the `orchestration` plugin's hooks.
+- `/plain-english` depends on the external `humanizer` plugin ([blader/humanizer](https://github.com/blader/humanizer)); without it the skill runs the ASD-STE100 pass only.
