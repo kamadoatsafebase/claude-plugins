@@ -1,74 +1,74 @@
 ---
 name: plain-english
-description: Rewrite text so it reads human, concise, and simple — run the humanizer skill, then apply ASD-STE100 Simplified Technical English. Use when the user types /plain-english, or asks to simplify, tighten, de-jargon, or de-AI a piece of prose. Args are optional — defaults to the most recent text in the conversation.
+description: Rewrite text so it reads human, concise, and simple. Runs the humanizer skill, then applies ASD-STE100 Simplified Technical English. Use when the user types /plain-english, or asks to simplify, tighten, de-jargon, or de-AI a piece of prose. Args are optional, and default to the most recent text in the conversation.
 ---
 
 # /plain-english
 
-Rewrite text to read human, concise, and simple: `humanizer` first, then ASD-STE100.
+Rewrite text to read human, concise, and simple. Run `humanizer` first, then ASD-STE100.
 
 Usage: `/plain-english [text | file path | description of the text]`
 
-- No args: use the most recent text the user wrote, pasted, or asked about in this conversation.
+- No args: use the most recent text the user wrote, pasted, or asked about.
 - A file path: rewrite that file in place.
-- Anything else: treat it as the text itself, or as a hint about which text to rewrite. Use your best judgment — don't ask for clarification.
+- Anything else: treat it as the text itself, or as a hint about which text to rewrite. Use your best judgment. Do not ask for clarification.
 
-> **Prerequisite:** the `humanizer` plugin (`blader/humanizer`). If the `humanizer:humanizer` skill is unavailable, say so in one line and run Steps 2, 4, and 5 only.
+> **Prerequisite:** the `humanizer` plugin (`blader/humanizer`). If the `humanizer:humanizer` skill is not available, say so in one line. Then run Steps 2, 4, and 5 only.
 
 ---
 
 ## Step 1 — Run humanizer
 
-Invoke `humanizer:humanizer` via the Skill tool in **embedded mode**, passing the resolved text. Take its final rewrite as your working draft.
+Pass the resolved text to `humanizer:humanizer` through the Skill tool in embedded mode. Take its final rewrite as your working draft.
 
 That skill owns the AI-pattern catalogue. Do not restate, re-derive, or second-guess its rules here.
 
 Carry its two hard constraints through every later step:
 
-- **Keep every claim.** Structure may change; information may not disappear.
-- **Invent no facts.** No new name, number, date, quote, or citation.
+- **Keep every claim.** The structure can change. The information cannot disappear.
+- **Invent no facts.** Add no new name, number, date, quote, or citation.
 
 ## Step 2 — Classify the text
 
-ASD-STE100 gives conflicting rules for the two text types, so decide first:
+ASD-STE100 gives conflicting rules for the two text types, so decide first.
 
 | Type | What it is | Sentence cap | Mood |
 | --- | --- | --- | --- |
 | Procedural | steps, instructions, runbooks, commands | 20 words | imperative ("Remove the cover.") |
-| Descriptive | everything else — docs, summaries, messages, prose | 25 words | indicative; no imperative |
+| Descriptive | everything else: docs, summaries, messages, prose | 25 words | indicative, never imperative |
 
 Both types: one topic per paragraph, six sentences maximum.
 
 ## Step 3 — Apply ASD-STE100
 
-Source: <https://www.asd-ste100.org/> — Issue 9 (2025-01-15), 53 writing rules plus a controlled dictionary, maintained by the ASD STEMG. Free; the downloads page has the PDF. Fetch it only if a specific rule is in doubt.
+Source: <https://www.asd-ste100.org/>. Issue 9 (2025-01-15) has 53 writing rules and a controlled dictionary, and the ASD STEMG maintains it. The standard is free, and the downloads page has the PDF. Fetch the PDF only if a specific rule is in doubt.
 
-Use the dictionary as a **substitution list, not a closed vocabulary** — its 875 approved words are sized for maintenance manuals and will flatten ordinary prose.
+Use the dictionary as a **substitution list, not a closed vocabulary**. Its 875 approved words are sized for maintenance manuals, and they flatten ordinary prose.
 
 **Words**
 
-- One term per thing, every time. Never two names for one item.
+- Use one term per thing, every time. Never use two names for one item.
 - Replace a nominalization with the verb inside it: "gives an indication of" → "shows".
-- No slang, jargon, or regional idiom.
-- No phrasal verbs when one verb exists: "put out" → "extinguish".
-- No Latin abbreviations: `e.g.` → "for example", `i.e.` → "that is", `etc.` → "and so on".
-- Gender-neutral language.
-- Maximum three words in a compound noun. Unpack the rest with a preposition: "engine transmission housing attachment bolts" → "the bolts that attach the transmission housing to the engine".
+- Use no slang, jargon, or regional idiom.
+- Use no phrasal verb when one verb exists: "put out" → "extinguish".
+- Use no Latin abbreviation: `e.g.` → "for example", `i.e.` → "that is", `etc.` → "and so on".
+- Use gender-neutral language.
+- Use three words maximum in a compound noun. Unpack the rest with a preposition: "engine transmission housing attachment bolts" → "the bolts that attach the transmission housing to the engine".
 
 **Sentences**
 
-- Active voice. Passive only when the actor is genuinely unknown.
-- One idea per sentence. Split at the sentence cap from Step 2 rather than trimming words out.
-- Simple tenses. "has adjusted" → "adjusted".
-- No semicolons. Use two sentences.
-- Keep the conjunction "that" — it marks where the main clause ends.
-- Replace "this" with its referent when more than one thing could be meant.
+- Use the active voice. Use the passive only when the actor is unknown.
+- Put one idea in each sentence. At the cap from Step 2, split the sentence. Do not trim words out.
+- Use simple tenses: "has adjusted" → "adjusted".
+- Use no semicolons. Write two sentences.
+- Keep the conjunction "that". It shows where the main clause ends.
+- Replace "this" with its referent when more than one thing can be meant.
 - Turn a complex sentence into a vertical list.
-- State the condition first, then the action: "If the valve is closed, open it."
+- Give the condition first, then the action: "If the valve is closed, open it."
 
 **Safety and risk**
 
-Lead with the command or the condition, then the consequence — never the reverse.
+Give the command or the condition first, then the consequence. Never do the opposite.
 
 **Substitutions**
 
@@ -89,30 +89,30 @@ Lead with the command or the condition, then the consequence — never the rever
 
 ## Step 4 — Do not over-apply
 
-These ASD-STE100 rules are aerospace-specific. Skip them unless the text is a technical procedure:
+These ASD-STE100 rules apply to aerospace only. Skip them unless the text is a technical procedure.
 
-- The ban on `-ing` forms — "Before starting the server" is fine.
-- The ban on contractions — wrong for conversational or informal text.
-- American-only spelling — follow the house style instead.
-- The article-before-every-noun rule — headings, labels, and UI strings drop articles legitimately.
-- The synonym ban — correct for reference docs, monotonous in narrative.
+- The ban on `-ing` forms. "Before starting the server" is correct English.
+- The ban on contractions. It is wrong for conversational or informal text.
+- American-only spelling. Follow the house style.
+- The article-before-every-noun rule. Headings, labels, and UI strings drop articles correctly.
+- The synonym ban. It is correct for reference docs and monotonous in narrative.
 
-Leave untouched: code, code blocks, identifiers, quoted material, YAML or JSON, link targets, and command output. Change prose only.
+Change prose only. Leave code, code blocks, identifiers, quoted material, YAML, JSON, link targets, and command output unchanged.
 
 ## Step 5 — Verify
 
-Check the rewrite against each item. Fix and re-check once, then stop.
+Check the rewrite against each item. Fix the problems, check once more, then stop.
 
-1. Every claim from the source survives; nothing was invented.
-2. No sentence is over the Step 2 cap.
-3. No paragraph is over six sentences or covers two topics.
-4. No compound noun is over three words.
-5. No passive voice with a known actor.
-6. No semicolons, no Latin abbreviations, no phrasal verbs with a one-word equivalent.
+1. Every claim from the source is still there. Nothing is invented.
+2. No sentence is longer than the cap from Step 2.
+3. No paragraph has more than six sentences or more than one topic.
+4. No compound noun has more than three words.
+5. No passive voice has a known actor.
+6. No semicolons. No Latin abbreviations. No phrasal verbs that one verb can replace.
 7. Read it aloud. If a sentence still stumbles, rewrite the paragraph around its main point.
 
 ## Step 6 — Return the result
 
-- **File mode** — write only the final text to the file, then give a summary of at most three lines.
-- **Pasted or inline text** — print the final rewrite, then list what changed, in at most five bullets.
-- **Called by another skill or task** — return the final text only.
+- **File mode:** write only the final text to the file. Then give a summary of three lines maximum.
+- **Pasted or inline text:** print the final rewrite. Then list what changed, in five bullets maximum.
+- **Called by another skill or task:** return the final text only.
