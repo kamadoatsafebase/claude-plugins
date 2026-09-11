@@ -2,8 +2,6 @@
 
 Rewrite AI-sounding text so it reads like the writer, not a chatbot. Keep what it says. Do not make anything up.
 
-> **Provenance.** This file is a vendored copy of the `humanizer` skill, version 3.0.0, by Siqi Chen: <https://github.com/blader/humanizer>. It is used under the MIT License, reproduced in `LICENSE` next to this file. Two changes were made: the YAML frontmatter was removed, and the "What to return" section was removed because Step 6 of `SKILL.md` defines the output of this skill. Nothing else was changed.
-
 ## Why AI text sounds the way it does
 
 A language model writes whatever is most likely to come next, so by default it makes the choice that fits the widest range of readers and subjects. A human writer chooses for one reader and one subject, so their choices are uneven and specific. Every pattern below is one form of the default choice:
