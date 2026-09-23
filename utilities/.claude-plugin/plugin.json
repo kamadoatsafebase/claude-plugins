@@ -1,7 +1,6 @@
 {
   "name": "utilities",
   "description": "Developer utilities: open Terminal, run code-review in a loop, remove merged branches, reconcile commit messages with Linear tickets, rewrite text in plain English, and build decision pages",
-  "version": "1.0.0",
   "author": {
     "name": "Kevin Amado",
     "url": "https://github.com/kamadorueda/claude-plugins"
