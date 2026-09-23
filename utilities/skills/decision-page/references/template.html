@@ -1,0 +1,633 @@
+<title>Queue Migration Decisions</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500..800&family=IBM+Plex+Sans:ital,wght@0,400;0,500;0,600;1,400&family=JetBrains+Mono:wght@400;500&display=swap">
+<style>
+:root {
+  --ground: 238 241 244;
+  --surface: 255 255 255;
+  --raised: 246 248 250;
+  --ink: 14 26 40;
+  --muted: 88 101 118;
+  --line: 214 220 228;
+  --accent: 11 110 128;
+  --accent-soft: 225 240 243;
+  --rec: 26 122 76;
+  --rec-soft: 226 243 234;
+  --warn: 161 92 0;
+  --warn-soft: 255 241 219;
+  --code: 234 238 242;
+  --slip-accent: 127 224 236;
+  --slip-rec: 125 227 176;
+  --slip-warn: 255 197 107;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    color-scheme: dark;
+    --ground: 10 16 22;
+    --surface: 17 25 33;
+    --raised: 22 32 42;
+    --ink: 228 235 242;
+    --muted: 147 161 176;
+    --line: 36 50 64;
+    --accent: 79 195 212;
+    --accent-soft: 14 42 49;
+    --rec: 93 211 158;
+    --rec-soft: 16 41 30;
+    --warn: 242 180 90;
+    --warn-soft: 45 34 18;
+    --code: 8 13 18;
+    --slip-accent: 11 110 128;
+    --slip-rec: 26 122 76;
+    --slip-warn: 161 92 0;
+  }
+}
+:root[data-theme="dark"] {
+  color-scheme: dark;
+  --ground: 10 16 22;
+  --surface: 17 25 33;
+  --raised: 22 32 42;
+  --ink: 228 235 242;
+  --muted: 147 161 176;
+  --line: 36 50 64;
+  --accent: 79 195 212;
+  --accent-soft: 14 42 49;
+  --rec: 93 211 158;
+  --rec-soft: 16 41 30;
+  --warn: 242 180 90;
+  --warn-soft: 45 34 18;
+  --code: 8 13 18;
+  --slip-accent: 11 110 128;
+  --slip-rec: 26 122 76;
+  --slip-warn: 161 92 0;
+}
+body {
+  background: rgb(var(--ground));
+  color: rgb(var(--ink));
+  font-family: "IBM Plex Sans", -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+}
+.docket-grid {
+  background-image:
+    linear-gradient(rgb(var(--line) / 0.55) 1px, transparent 1px),
+    linear-gradient(90deg, rgb(var(--line) / 0.55) 1px, transparent 1px);
+  background-size: 28px 28px;
+  -webkit-mask-image: linear-gradient(to bottom, #000 0%, transparent 85%);
+  mask-image: linear-gradient(to bottom, #000 0%, transparent 85%);
+}
+@media (prefers-reduced-motion: no-preference) {
+  html { scroll-behavior: smooth; }
+}
+</style>
+<script src="https://cdn.tailwindcss.com/3.4.17"></script>
+<script>
+tailwind.config = {
+  theme: {
+    extend: {
+      colors: {
+        ground: "rgb(var(--ground) / <alpha-value>)",
+        surface: "rgb(var(--surface) / <alpha-value>)",
+        raised: "rgb(var(--raised) / <alpha-value>)",
+        ink: "rgb(var(--ink) / <alpha-value>)",
+        muted: "rgb(var(--muted) / <alpha-value>)",
+        line: "rgb(var(--line) / <alpha-value>)",
+        accent: "rgb(var(--accent) / <alpha-value>)",
+        "accent-soft": "rgb(var(--accent-soft) / <alpha-value>)",
+        rec: "rgb(var(--rec) / <alpha-value>)",
+        "rec-soft": "rgb(var(--rec-soft) / <alpha-value>)",
+        warn: "rgb(var(--warn) / <alpha-value>)",
+        "warn-soft": "rgb(var(--warn-soft) / <alpha-value>)",
+        code: "rgb(var(--code) / <alpha-value>)",
+        "slip-accent": "rgb(var(--slip-accent) / <alpha-value>)",
+        "slip-rec": "rgb(var(--slip-rec) / <alpha-value>)",
+        "slip-warn": "rgb(var(--slip-warn) / <alpha-value>)"
+      },
+      fontFamily: {
+        display: ["\"Bricolage Grotesque\"", "\"IBM Plex Sans\"", "system-ui", "sans-serif"],
+        sans: ["\"IBM Plex Sans\"", "-apple-system", "\"Segoe UI\"", "Roboto", "Helvetica", "Arial", "sans-serif"],
+        mono: ["\"JetBrains Mono\"", "ui-monospace", "SFMono-Regular", "Menlo", "Consolas", "monospace"]
+      },
+      boxShadow: {
+        card: "0 1px 2px rgb(var(--ink) / 0.04), 0 4px 16px -6px rgb(var(--ink) / 0.08)",
+        lift: "0 2px 4px rgb(var(--ink) / 0.05), 0 12px 32px -12px rgb(var(--ink) / 0.18)",
+        slip: "0 -12px 40px -12px rgb(var(--ink) / 0.35)"
+      }
+    }
+  }
+};
+</script>
+<style type="text/tailwindcss">
+@layer base {
+  h1, h2, h3 { text-wrap: balance; }
+  a { @apply text-accent underline decoration-accent/40 underline-offset-[3px] hover:decoration-accent; }
+  :focus-visible { @apply outline-none ring-2 ring-accent ring-offset-2 ring-offset-ground; }
+  :not(pre) > code { @apply rounded bg-code px-1.5 py-0.5 font-mono text-[0.84em] [overflow-wrap:anywhere]; }
+}
+@layer components {
+  .eyebrow { @apply font-mono text-[11px] font-medium uppercase tracking-[0.14em] text-muted; }
+  .summary-card { @apply grid grid-rows-[auto_1fr_auto] gap-3 rounded-2xl border border-line bg-surface p-5 text-ink no-underline shadow-card motion-safe:transition hover:-translate-y-0.5 hover:border-accent/60 hover:shadow-lift; }
+  .summary-num { @apply font-display text-4xl font-extrabold leading-none text-line motion-safe:transition-colors; }
+  .summary-card:hover .summary-num { @apply text-accent; }
+  .state { @apply inline-flex items-center gap-1.5 justify-self-start rounded-full bg-warn-soft px-2.5 py-1 text-xs font-semibold text-warn before:size-1.5 before:rounded-full before:bg-current before:content-['']; }
+  .state[data-answered="true"] { @apply bg-rec-soft text-rec; }
+  .decision { @apply grid scroll-mt-6 gap-6 border-t border-line py-12 lg:grid-cols-[7rem_minmax(0,1fr)] lg:gap-10; }
+  .decision-rail { @apply flex items-baseline gap-3 lg:sticky lg:top-8 lg:block lg:self-start; }
+  .decision-num { @apply font-display text-5xl font-extrabold leading-none tracking-tight text-accent lg:text-7xl; }
+  .decision-kind { @apply eyebrow lg:mt-3 lg:block; }
+  .decision-body { @apply grid min-w-0 gap-8; }
+  .question { @apply font-display text-2xl font-bold leading-tight tracking-tight sm:text-[1.75rem]; }
+  .panel-title { @apply eyebrow mb-3; }
+  .prose-block { @apply grid max-w-[65ch] gap-3 text-[15.5px] leading-relaxed; }
+  .evidence { @apply grid gap-2; }
+  .evidence li { @apply grid gap-1 rounded-xl border border-line bg-surface px-4 py-3 text-[15px] shadow-card; }
+  .evidence b { @apply mr-1 font-mono text-[11px] font-medium uppercase tracking-[0.12em] text-muted; }
+  .tag { @apply ml-1 inline-block rounded px-1.5 py-0.5 align-[2px] font-mono text-[10px] font-medium uppercase tracking-[0.12em]; }
+  .tag.unverified { @apply bg-warn-soft text-warn; }
+  .scroll { @apply overflow-x-auto rounded-xl border border-line; }
+  .scroll pre { @apply m-0 bg-code px-5 py-4 font-mono text-[13.5px] leading-7; }
+  .scroll table { @apply w-full min-w-[34rem] border-collapse bg-surface text-sm; }
+  .scroll th { @apply border-b border-line bg-raised px-4 py-2.5 text-left font-mono text-[11px] font-medium uppercase tracking-[0.12em] text-muted; }
+  .scroll td { @apply border-b border-line px-4 py-3 align-top; }
+  .scroll tr:last-child td { @apply border-b-0; }
+  .scroll td code { @apply whitespace-nowrap; }
+  .readonly { @apply font-semibold text-rec; }
+  .writes { @apply font-semibold text-warn; }
+  .options { @apply m-0 grid min-w-0 gap-3 border-0 p-0; }
+  .option { @apply relative grid cursor-pointer grid-cols-[auto_minmax(0,1fr)] gap-4 rounded-2xl border border-line bg-surface p-5 shadow-card motion-safe:transition hover:border-accent/60 has-[:checked]:border-accent has-[:checked]:bg-accent-soft has-[:checked]:shadow-lift has-[:focus-visible]:ring-2 has-[:focus-visible]:ring-accent has-[:focus-visible]:ring-offset-2 has-[:focus-visible]:ring-offset-ground; }
+  .option.is-checked { @apply border-accent bg-accent-soft shadow-lift; }
+  .option input { @apply mt-0.5 grid size-5 shrink-0 cursor-pointer appearance-none place-content-center rounded-full border-2 border-line bg-surface motion-safe:transition before:size-2.5 before:scale-0 before:rounded-full before:bg-accent before:content-[''] motion-safe:before:transition-transform checked:border-accent checked:before:scale-100 focus-visible:ring-0 focus-visible:ring-offset-0; }
+  .option-body { @apply grid min-w-0 gap-2; }
+  .option-title { @apply flex flex-wrap items-center gap-x-3 gap-y-1 font-display text-lg font-semibold leading-snug; }
+  .option-facts { @apply grid gap-1.5 text-[14.5px] leading-relaxed sm:grid-cols-[4.5rem_minmax(0,1fr)] sm:gap-x-3; }
+  .option-facts dt { @apply pt-[3px] font-mono text-[10.5px] font-medium uppercase tracking-[0.12em] text-muted; }
+  .option-facts dd { @apply m-0 mb-1 sm:mb-0; }
+  .badge { @apply inline-block -rotate-2 rounded-[3px] border-2 border-rec px-1.5 py-px font-mono text-[10px] font-medium uppercase leading-4 tracking-[0.16em] text-rec; }
+  .why-rec { @apply flex max-w-[65ch] flex-wrap items-baseline gap-x-3 gap-y-1 rounded-xl bg-rec-soft px-4 py-3 text-[15px] leading-relaxed; }
+  .why-rec b { @apply font-mono text-[11px] font-medium uppercase tracking-[0.12em] text-rec; }
+  .next { @apply rounded-xl border border-line bg-surface px-4 py-3 shadow-card; }
+  .next summary { @apply cursor-pointer select-none font-medium marker:text-accent; }
+  .next ol { @apply mt-3 grid list-decimal gap-1.5 pl-5 text-[15px] marker:font-mono marker:text-muted; }
+  .note { @apply grid gap-2; }
+  .note label { @apply eyebrow; }
+  .note textarea { @apply w-full resize-y rounded-xl border border-line bg-surface px-4 py-3 text-[15px] text-ink shadow-card placeholder:text-muted/70 focus:border-accent; }
+  .waiting { @apply grid gap-2; }
+  .waiting li { @apply flex flex-wrap items-baseline justify-between gap-x-4 gap-y-1 rounded-xl border border-line bg-surface px-4 py-3 shadow-card; }
+  .waiting .why { @apply text-sm text-muted; }
+  .seg { @apply h-1.5 flex-1 rounded-full bg-ground/20 motion-safe:transition-colors; }
+  .seg[data-on="true"] { @apply bg-slip-rec; }
+  .slip-btn { @apply rounded-full px-5 py-2.5 text-sm font-semibold motion-safe:transition focus-visible:ring-slip-accent focus-visible:ring-offset-ink disabled:cursor-not-allowed disabled:opacity-50; }
+}
+</style>
+
+<div id="page" data-rev="1" class="min-h-full">
+  <header class="relative overflow-hidden border-b border-line">
+    <div class="docket-grid pointer-events-none absolute inset-0" aria-hidden="true"></div>
+    <div class="relative mx-auto grid max-w-5xl gap-5 px-4 pb-12 pt-12 sm:px-6 sm:pt-16">
+      <div class="flex flex-wrap items-center gap-x-3 gap-y-1 font-mono text-[11px] uppercase tracking-[0.14em] text-muted">
+        <span class="rounded-full border border-line bg-surface px-2.5 py-1 text-ink">Decisions needed</span>
+        <span>2026-09-23</span>
+        <span aria-hidden="true">/</span>
+        <a href="https://github.com/example-org/billing/milestone/4" class="text-muted no-underline hover:text-accent">billing · milestone 4</a>
+      </div>
+      <h1 id="page-title" class="max-w-3xl font-display text-4xl font-extrabold leading-[1.05] tracking-tight sm:text-5xl">Two decisions block the queue migration</h1>
+      <p class="max-w-2xl text-lg leading-relaxed text-muted">Your answers unblock <a href="https://github.com/example-org/billing/pull/812">PR #812</a> and the cutover in phase 3.</p>
+    </div>
+  </header>
+
+  <main class="mx-auto max-w-5xl px-4 sm:px-6">
+    <section class="py-12" aria-labelledby="summary-title">
+      <h2 id="summary-title" class="eyebrow mb-5">At a glance</h2>
+      <div class="grid grid-cols-[repeat(auto-fit,minmax(15rem,1fr))] gap-4">
+        <a class="summary-card" href="#d1" data-summary-for="d1">
+          <span class="summary-num">01</span>
+          <span class="grid gap-2">
+            <span class="font-display text-lg font-semibold leading-snug">Can I run the Terraform plan against staging?</span>
+            <span class="text-sm leading-relaxed text-muted">Recommended: yes, run the two read-only commands as written.</span>
+          </span>
+          <span class="state" data-state>No answer yet</span>
+        </a>
+        <a class="summary-card" href="#d2" data-summary-for="d2">
+          <span class="summary-num">02</span>
+          <span class="grid gap-2">
+            <span class="font-display text-lg font-semibold leading-snug">Which queue should the invoice worker use?</span>
+            <span class="text-sm leading-relaxed text-muted">Recommended: option 1, move to the new queue now.</span>
+          </span>
+          <span class="state" data-state>No answer yet</span>
+        </a>
+      </div>
+    </section>
+
+    <section class="decision" id="d1" data-decision aria-labelledby="d1-q">
+      <div class="decision-rail">
+        <span class="decision-num">01</span>
+        <span class="decision-kind">Run commands</span>
+      </div>
+      <div class="decision-body">
+        <header class="grid gap-3">
+          <h2 class="question" id="d1-q">Can I run the Terraform plan against staging?</h2>
+          <p class="text-[15px] text-muted">Unblocks <a href="https://github.com/example-org/billing/pull/812">PR #812</a> and the phase 3 cutover.</p>
+        </header>
+
+        <div>
+          <h3 class="panel-title">Context</h3>
+          <div class="prose-block">
+            <p>Terraform is the tool that creates our cloud resources from code. A plan is a dry run: it lists what Terraform would change and changes nothing.</p>
+            <p>PR #812 moves the invoice queue to a new module. I need the plan output to show you what the move changes before anyone applies it.</p>
+          </div>
+        </div>
+
+        <div>
+          <h3 class="panel-title">Evidence</h3>
+          <ul class="evidence">
+            <li><span><b>Checked</b>the PR touches only <code>infra/queues/</code>.</span><span><b>How</b><code>gh pr diff 812 --name-only</code></span><span><b>Result</b>3 files, all under <code>infra/queues/</code>.</span></li>
+            <li><span><b>Checked</b>the state bucket has versioning.<span class="tag unverified">Not verified</span></span><span><b>How</b>not checked. I have no read access to the bucket settings.</span></li>
+          </ul>
+        </div>
+
+        <div class="grid gap-3">
+          <h3 class="panel-title !mb-0">Exact commands</h3>
+          <div class="scroll"><pre><code>cd infra/queues
+terraform init -input=false
+terraform plan -input=false -lock=false -out=/tmp/pr812.plan</code></pre></div>
+          <div class="scroll">
+            <table>
+              <thead><tr><th>Part</th><th>What it does</th><th>What it touches</th><th>Effect</th></tr></thead>
+              <tbody>
+                <tr><td><code>terraform init</code></td><td>Downloads providers and connects to the state backend.</td><td>Local <code>.terraform/</code> folder, state bucket (read)</td><td class="readonly">Read-only remote</td></tr>
+                <tr><td><code>terraform plan -lock=false</code></td><td>Compares code with live staging and prints the difference. <code>-lock=false</code> skips the state lock, so no one else is blocked.</td><td>Staging API (read), <code>/tmp/pr812.plan</code></td><td class="readonly">Read-only remote</td></tr>
+              </tbody>
+            </table>
+          </div>
+          <p class="max-w-[65ch] text-sm leading-relaxed text-muted">Credentials: the commands use your current <code>gcloud</code> login through <code>gcloud auth application-default print-access-token</code>. No token appears on this page or in the output.</p>
+        </div>
+
+        <div class="grid gap-4">
+          <fieldset class="options" id="d1-options">
+            <legend class="panel-title">Pick one</legend>
+            <label class="option">
+              <input type="radio" name="d1" id="d1-o1" value="yes, run the plan commands as written">
+              <span class="option-body">
+                <span class="option-title">Run the commands as written <span class="badge">Recommended</span></span>
+                <dl class="option-facts">
+                  <dt>Good</dt><dd>You see the real change list before anything is applied.</dd>
+                  <dt>Cost</dt><dd>About 2 minutes, and read calls against staging.</dd>
+                  <dt>Next</dt><dd>I run them, then post the plan summary in the chat.</dd>
+                </dl>
+              </span>
+            </label>
+            <label class="option">
+              <input type="radio" name="d1" id="d1-o2" value="no, do not run the plan, stop work on PR 812">
+              <span class="option-body">
+                <span class="option-title">Do not run them</span>
+                <dl class="option-facts">
+                  <dt>Good</dt><dd>Nothing touches staging.</dd>
+                  <dt>Cost</dt><dd>PR #812 stays blocked.</dd>
+                  <dt>Next</dt><dd>I stop and wait for you.</dd>
+                </dl>
+              </span>
+            </label>
+            <label class="option">
+              <input type="radio" name="d1" id="d1-o3" value="change the commands first, I will say what to change">
+              <span class="option-body">
+                <span class="option-title">Change the commands first</span>
+                <dl class="option-facts">
+                  <dt>Good</dt><dd>You control the exact scope.</dd>
+                  <dt>Cost</dt><dd>One more round trip.</dd>
+                  <dt>Next</dt><dd>I ask what to change, update this page, and wait for a new answer.</dd>
+                </dl>
+              </span>
+            </label>
+          </fieldset>
+          <p class="why-rec"><b>Why option 1</b><span>Both commands only read from staging, and the plan is the only way to see what PR #812 changes.</span></p>
+        </div>
+
+        <details class="next">
+          <summary>What happens next if you pick option 1</summary>
+          <ol>
+            <li>I run the two commands above, with no changes.</li>
+            <li>I post the count of resources to add, change, and destroy.</li>
+            <li>I apply nothing. An apply needs a new decision.</li>
+          </ol>
+        </details>
+
+        <div class="note">
+          <label for="d1-note">Note for decision 1 (optional)</label>
+          <textarea id="d1-note" data-note rows="2" placeholder="Anything I should know before I act"></textarea>
+        </div>
+      </div>
+    </section>
+
+    <section class="decision" id="d2" data-decision aria-labelledby="d2-q">
+      <div class="decision-rail">
+        <span class="decision-num">02</span>
+        <span class="decision-kind">Design tradeoff</span>
+      </div>
+      <div class="decision-body">
+        <header class="grid gap-3">
+          <h2 class="question" id="d2-q">Which queue should the invoice worker use?</h2>
+          <p class="text-[15px] text-muted">Unblocks <a href="https://linear.app/example/issue/BIL-204">BIL-204</a>.</p>
+        </header>
+
+        <div>
+          <h3 class="panel-title">Context</h3>
+          <div class="prose-block">
+            <p>The invoice worker reads jobs from a queue. A queue holds work until a worker takes it. The new queue retries failed jobs by itself. The old queue does not.</p>
+          </div>
+        </div>
+
+        <div class="grid gap-4">
+          <fieldset class="options" id="d2-options">
+            <legend class="panel-title">Pick one</legend>
+            <label class="option">
+              <input type="radio" name="d2" id="d2-o1" value="option 1, move the invoice worker to the new queue now">
+              <span class="option-body">
+                <span class="option-title">Move to the new queue now <span class="badge">Recommended</span></span>
+                <dl class="option-facts">
+                  <dt>Good</dt><dd>Failed jobs retry without a person.</dd>
+                  <dt>Cost</dt><dd>One deploy, and 10 minutes of paused jobs.</dd>
+                  <dt>Next</dt><dd>I update the worker config in PR #812.</dd>
+                </dl>
+              </span>
+            </label>
+            <label class="option">
+              <input type="radio" name="d2" id="d2-o2" value="option 2, keep the old queue until next quarter">
+              <span class="option-body">
+                <span class="option-title">Keep the old queue for now</span>
+                <dl class="option-facts">
+                  <dt>Good</dt><dd>No change this sprint.</dd>
+                  <dt>Cost</dt><dd>Failed jobs still need a manual retry.</dd>
+                  <dt>Next</dt><dd>I remove the worker change from PR #812.</dd>
+                </dl>
+              </span>
+            </label>
+          </fieldset>
+          <p class="why-rec"><b>Why option 1</b><span>The pause is short, and the queue dashboard shows 14 manual retries last month.</span></p>
+        </div>
+
+        <div class="note">
+          <label for="d2-note">Note for decision 2 (optional)</label>
+          <textarea id="d2-note" data-note rows="2" placeholder="Anything I should know before I act"></textarea>
+        </div>
+      </div>
+    </section>
+
+    <section class="border-t border-line py-12" aria-labelledby="waiting-title">
+      <h2 id="waiting-title" class="font-display text-xl font-bold tracking-tight">Also waiting on you, no decision needed</h2>
+      <ul class="waiting mt-5">
+        <li><a href="https://github.com/example-org/billing/pull/809">PR #809: rename queue variables</a><span class="why">Needs your approval to merge. CI is green.</span></li>
+      </ul>
+    </section>
+  </main>
+
+  <section class="sticky bottom-0 z-10 bg-ink text-ground shadow-slip" aria-labelledby="answer-title">
+    <div class="mx-auto grid max-w-5xl gap-3 px-4 pb-[calc(1rem+env(safe-area-inset-bottom,0px))] pt-4 sm:px-6">
+      <div class="flex flex-wrap items-center justify-between gap-x-4 gap-y-2">
+        <h2 id="answer-title" class="font-mono text-[11px] font-medium uppercase tracking-[0.14em] text-ground/60">Your answer</h2>
+        <span id="answer-status" data-missing="true" aria-live="polite" class="text-sm font-semibold text-slip-rec data-[missing=true]:text-slip-warn">No decisions answered yet</span>
+      </div>
+      <div id="answer-progress" class="flex gap-1.5" aria-hidden="true"></div>
+      <textarea id="answer" readonly rows="2" aria-describedby="answer-status" class="max-h-36 min-h-[3.5rem] w-full resize-y rounded-xl border border-ground/15 bg-ground/5 px-4 py-3 font-mono text-[13px] leading-6 text-ground focus:border-slip-accent focus-visible:ring-slip-accent focus-visible:ring-offset-ink"></textarea>
+      <div class="flex flex-wrap items-center gap-x-3 gap-y-2">
+        <button type="button" id="copy-btn" class="slip-btn bg-slip-accent text-ink hover:brightness-110">Copy answer</button>
+        <button type="button" id="send-btn" class="slip-btn border border-ground/30 text-ground hover:bg-ground/10" hidden>Send to Claude</button>
+        <span id="answer-msg" aria-live="polite" class="text-sm text-ground/70">Paste the answer in the chat.</span>
+      </div>
+    </div>
+  </section>
+</div>
+
+<script>
+(function () {
+  var page = document.getElementById("page");
+  var key = "decision-page:" + (page.getAttribute("data-rev") || "1");
+  var sections = Array.prototype.slice.call(document.querySelectorAll("[data-decision]"));
+  var answer = document.getElementById("answer");
+  var status = document.getElementById("answer-status");
+  var progress = document.getElementById("answer-progress");
+  var msg = document.getElementById("answer-msg");
+  var copyBtn = document.getElementById("copy-btn");
+  var sendBtn = document.getElementById("send-btn");
+  var maxBytes = 4000;
+  var comments = null;
+  var sending = false;
+
+  var segments = sections.map(function () {
+    var seg = document.createElement("span");
+    seg.className = "seg";
+    progress.appendChild(seg);
+    return seg;
+  });
+
+  function load() {
+    try {
+      var raw = window.localStorage.getItem(key);
+      var data = raw ? JSON.parse(raw) : {};
+      return data && typeof data === "object" ? data : {};
+    } catch (e) {
+      return {};
+    }
+  }
+
+  function save(state) {
+    try {
+      window.localStorage.setItem(key, JSON.stringify(state));
+    } catch (e) {}
+  }
+
+  function sentence(text) {
+    var s = String(text).replace(/\s+/g, " ").trim();
+    return /[.!?]$/.test(s) ? s : s + ".";
+  }
+
+  function byteLength(text) {
+    try {
+      return new TextEncoder().encode(text).length;
+    } catch (e) {
+      return text.length;
+    }
+  }
+
+  function setMsg(text) {
+    msg.textContent = text;
+  }
+
+  function missingLabel(missing) {
+    return missing.length === 1 ? "Decision " + missing[0] + " has no answer yet" : "Decisions " + missing.join(", ") + " have no answer yet";
+  }
+
+  function missingText(missing) {
+    return missing.length ? " " + missingLabel(missing) + "." : "";
+  }
+
+  function compose() {
+    var parts = [];
+    var missing = [];
+    var state = {};
+    sections.forEach(function (section, i) {
+      var n = i + 1;
+      var picked = section.querySelector('input[type="radio"]:checked');
+      var noteEl = section.querySelector("textarea[data-note]");
+      var note = noteEl ? noteEl.value.trim() : "";
+      state[section.id] = { pick: picked ? picked.id : null, note: noteEl ? noteEl.value : "" };
+      var part = n + ": " + (picked ? sentence(picked.value) : "no answer yet.");
+      if (note) {
+        part += " Note: " + sentence(note);
+      }
+      parts.push(part);
+      if (!picked) {
+        missing.push(n);
+      }
+      segments[i].setAttribute("data-on", picked ? "true" : "false");
+      section.querySelectorAll(".option").forEach(function (label) {
+        var input = label.querySelector('input[type="radio"]');
+        label.classList.toggle("is-checked", !!(input && input.checked));
+      });
+      var card = document.querySelector('[data-summary-for="' + section.id + '"] [data-state]');
+      if (card) {
+        card.textContent = picked ? "Answered" : "No answer yet";
+        card.setAttribute("data-answered", picked ? "true" : "false");
+      }
+    });
+    answer.value = parts.join(" ");
+    if (missing.length === 0) {
+      status.textContent = "All " + sections.length + " decisions answered";
+      status.setAttribute("data-missing", "false");
+    } else {
+      status.textContent = missingLabel(missing);
+      status.setAttribute("data-missing", "true");
+    }
+    save(state);
+    updateSend();
+    return missing;
+  }
+
+  function restore() {
+    var state = load();
+    sections.forEach(function (section) {
+      var saved = state[section.id];
+      if (!saved) {
+        return;
+      }
+      if (saved.pick) {
+        var input = document.getElementById(saved.pick);
+        if (input && input.type === "radio" && section.contains(input)) {
+          input.checked = true;
+        }
+      }
+      var noteEl = section.querySelector("textarea[data-note]");
+      if (noteEl && typeof saved.note === "string") {
+        noteEl.value = saved.note;
+      }
+    });
+  }
+
+  function selectAnswer() {
+    answer.focus();
+    answer.select();
+    try {
+      answer.setSelectionRange(0, answer.value.length);
+    } catch (e) {}
+  }
+
+  copyBtn.addEventListener("click", function () {
+    var missing = compose();
+    var text = answer.value;
+    function fallback() {
+      selectAnswer();
+      setMsg("Press Cmd+C to copy the selected answer." + missingText(missing));
+    }
+    if (navigator.clipboard && typeof navigator.clipboard.writeText === "function") {
+      try {
+        navigator.clipboard.writeText(text).then(function () {
+          setMsg("Copied. Paste it in the chat." + missingText(missing));
+        }, fallback);
+      } catch (e) {
+        fallback();
+      }
+    } else {
+      fallback();
+    }
+  });
+
+  function updateSend() {
+    if (!comments || sendBtn.hidden || sending) {
+      return;
+    }
+    sendBtn.disabled = byteLength(answer.value) > maxBytes;
+    if (sendBtn.disabled) {
+      setMsg("The answer is too long to send. Copy it instead.");
+    }
+  }
+
+  function refreshSend() {
+    if (!comments || typeof comments.canSendToClaude !== "function") {
+      sendBtn.hidden = true;
+      return;
+    }
+    comments.canSendToClaude().then(function (value) {
+      sendBtn.hidden = value !== "available";
+      updateSend();
+    }, function () {
+      sendBtn.hidden = true;
+    });
+  }
+
+  sendBtn.addEventListener("click", function () {
+    if (!comments || sending) {
+      return;
+    }
+    var missing = compose();
+    var text = answer.value;
+    if (byteLength(text) > maxBytes) {
+      return;
+    }
+    sending = true;
+    sendBtn.disabled = true;
+    setMsg("Sending...");
+    comments.anchorFor(document.getElementById("page-title")).then(function (anchor) {
+      return comments.sendToClaude({ anchor: anchor, text: text });
+    }).then(function () {
+      setMsg("Sent to Claude. Watch the chat for the reply." + missingText(missing));
+    }, function (err) {
+      var code = err && err.code;
+      if (code === "consent_required") {
+        setMsg("Not sent. Allow this page to comment for you, then try again, or copy the answer.");
+      } else if (code === "rate_limited") {
+        setMsg("Not sent. Wait a moment and try again, or copy the answer.");
+      } else {
+        setMsg("Not sent. Copy the answer and paste it in the chat.");
+        refreshSend();
+      }
+    }).then(function () {
+      sending = false;
+      sendBtn.disabled = false;
+      updateSend();
+    });
+  });
+
+  document.addEventListener("change", function (event) {
+    if (event.target && event.target.matches('input[type="radio"]')) {
+      compose();
+    }
+  });
+  document.addEventListener("input", function (event) {
+    if (event.target && event.target.matches("textarea[data-note]")) {
+      compose();
+    }
+  });
+  document.addEventListener("visibilitychange", function () {
+    if (document.visibilityState === "visible") {
+      refreshSend();
+    }
+  });
+
+  restore();
+  compose();
+
+  if (window.claude && typeof window.claude.use === "function") {
+    window.claude.use("comments").then(function (namespace) {
+      comments = namespace;
+      refreshSend();
+    }, function () {});
+  }
+})();
+</script>
