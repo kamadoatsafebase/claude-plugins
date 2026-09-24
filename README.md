@@ -1,6 +1,6 @@
 # claude-plugins
 
-A personal [Claude Code](https://docs.claude.com/claude-code) plugin marketplace: skills, an agent, and hooks for code review, commit/ticket hygiene, knowledge management, and general dev productivity.
+A personal [Claude Code](https://docs.claude.com/claude-code) plugin marketplace: skills, an agent, and hooks for commit/ticket hygiene, knowledge management, and general dev productivity.
 
 ## Installing
 
@@ -49,10 +49,8 @@ Standalone developer-productivity skills, plus one agent.
 
 - **/commit-and-ticket** — thin proxy invoking the `utilities:commit-and-ticket` agent to verify HEAD's commit message matches its diff and links a valid Linear ticket, regenerating the message and/or filing a ticket as needed.
 - **commit-and-ticket agent** (`agents/commit-and-ticket.md`) — does the actual work: parses natural-language args (team, project, parent ticket, explicit ticket link, skip-ticket/skip-project), judges message accuracy against the diff, creates or links a Linear ticket (self-assigned, mandatory project or explicit opt-out), regenerates the message under commitlint-compatible rules, and amends HEAD.
-- **/code-review-loop** — runs the built-in `code-review` skill repeatedly, triages findings into fix/skip, applies fixes and amends the commit, up to 5 turns or until clean.
 - **/plain-english `[text|file|description]`** — rewrites text to read human, concise, and simple: removes AI writing patterns, then applies the generalizable subset of [ASD-STE100](https://www.asd-ste100.org/) Simplified Technical English. Both rule sets live in the skill's `references/`, so it needs no external plugin.
 - **/decision-page `[description]`** — builds a private HTML artifact for decisions that need context: one section per decision with evidence, exact commands, and 2 to 4 option cards (one recommended). A sticky bar composes a one-line answer (`1: <option>. 2: <option>. Note: ...`) with a Copy button, and a "Send to Claude" button when the `comments` capability is available. The page template (Tailwind, light and dark themes) lives in the skill's `references/`.
-- **/open-terminal `[path|description]`** — opens a path (or cwd, or a path inferred from a description) in a new macOS Terminal window.
 - **/remove-merged-branches** — deletes local git branches with zero unique commits vs. `origin/main`, after listing them and confirming with the user.
 
 ## Notes / gaps

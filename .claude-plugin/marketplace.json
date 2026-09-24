@@ -4,7 +4,7 @@
     "name": "Kevin Amado"
   },
   "metadata": {
-    "description": "A collection of Claude Code plugins for code review, PR management, knowledge management, and developer productivity",
+    "description": "A collection of Claude Code plugins for PR management, knowledge management, and developer productivity",
     "pluginRoot": "."
   },
   "plugins": [
@@ -21,7 +21,7 @@
     {
       "name": "utilities",
       "source": "./utilities",
-      "description": "Developer utilities: open Terminal, run code-review in a loop, remove merged branches, reconcile commit messages with Linear tickets, rewrite text in plain English, and build decision pages"
+      "description": "Developer utilities: remove merged branches, reconcile commit messages with Linear tickets, rewrite text in plain English, and build decision pages"
     }
   ]
 }
